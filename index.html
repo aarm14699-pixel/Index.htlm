@@ -69,10 +69,8 @@ const T = {
     exitPrice: 'ราคาออก',
     qty: 'จำนวน / Lot',
     pnl: 'กำไร/ขาดทุน ($)',
-    stopLoss: 'จุดตัดขาดทุน',
-    takeProfit: 'จุดทำกำไร',
-    rMultiple: 'R-Multiple',
-    fees: 'ค่าธรรมเนียม',
+    risk: 'ความเสี่ยง ($)',
+    rrInput: 'RR (เช่น 2 = 1:2)',
     strategy: 'กลยุทธ์',
     result: 'ผลลัพธ์',
     session: 'เซสชั่น',
@@ -108,12 +106,6 @@ const T = {
     worstLossStreak: 'แพ้ติดต่อกันมากที่สุด',
     noTrades: 'ยังไม่มีเทรด',
     noTradesDesc: 'บันทึกเทรดแรกของคุณเพื่อเริ่มติดตาม',
-    autoCalc: 'คำนวณอัตโนมัติ',
-    instrumentType: 'ประเภทสินทรัพย์',
-    pipSize: 'ขนาด Pip',
-    pipValue: 'มูลค่า Pip ($)',
-    calculatedPnl: 'กำไร/ขาดทุนที่คำนวณได้',
-    rrRatio: 'อัตราส่วน RR',
     newEntry: '+ บันทึกใหม่',
     addStrategy: '+ เพิ่มกลยุทธ์',
     mood: 'อารมณ์',
@@ -231,10 +223,8 @@ const T = {
     exitPrice: 'Exit Price',
     qty: 'Quantity / Lots',
     pnl: 'P&L ($)',
-    stopLoss: 'Stop Loss',
-    takeProfit: 'Take Profit',
-    rMultiple: 'R-Multiple',
-    fees: 'Fees',
+    risk: 'Risk ($)',
+    rrInput: 'RR (e.g. 2 = 1:2)',
     strategy: 'Strategy',
     result: 'Result',
     session: 'Session',
@@ -270,12 +260,6 @@ const T = {
     worstLossStreak: 'Worst Loss Streak',
     noTrades: 'No trades yet',
     noTradesDesc: 'Log your first trade to start tracking.',
-    autoCalc: 'Auto-calc',
-    instrumentType: 'Instrument Type',
-    pipSize: 'Pip Size',
-    pipValue: 'Pip Value ($)',
-    calculatedPnl: 'Calculated P&L',
-    rrRatio: 'R:R Ratio',
     newEntry: '+ New Entry',
     addStrategy: '+ Add Strategy',
     mood: 'Mood',
@@ -380,16 +364,12 @@ async function loadFromFirestore() {
   if (!currentUser) return;
   const uid = currentUser.uid;
   try {
-    // Load trades
     const tSnap = await getDocs(collection(db, 'users', uid, 'trades'));
     state.trades = tSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-    // Load journals
     const jSnap = await getDocs(collection(db, 'users', uid, 'journals'));
     state.journals = jSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-    // Load playbooks
     const pSnap = await getDocs(collection(db, 'users', uid, 'playbooks'));
     state.playbooks = pSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-    // Load settings
     const sSnap = await getDoc(doc(db, 'users', uid, 'settings', 'main'));
     if (sSnap.exists()) state.settings = sSnap.data();
   } catch(e) { console.error('Load error:', e); }
@@ -447,34 +427,6 @@ function showToast(msg, color='') {
 function destroyChart(key) { if (charts[key]) { charts[key].destroy(); delete charts[key]; } }
 
 // ═══════════════════════════════════════════════
-// P&L CALCULATOR
-// ═══════════════════════════════════════════════
-function calcPnL(entry, exit, qty, instrumentType, pipSize) {
-  if (!entry || !exit || !qty) return null;
-  const diff = exit - entry;
-  switch(instrumentType) {
-    case 'Forex': {
-      const pips = diff / (pipSize || 0.0001);
-      const pipVal = (pipSize || 0.0001) * qty * 100000;
-      return pips * (pipSize || 0.0001) * 100000 * qty;
-    }
-    case 'Crypto': return diff * qty;
-    case 'Stocks': return diff * qty;
-    case 'Futures': return diff * qty;
-    case 'Indices': return diff * qty;
-    default: return diff * qty;
-  }
-}
-
-function calcRR(entry, sl, tp, direction) {
-  if (!entry || !sl || !tp) return null;
-  const risk = Math.abs(entry - sl);
-  const reward = Math.abs(tp - entry);
-  if (risk === 0) return null;
-  return (reward / risk).toFixed(2);
-}
-
-// ═══════════════════════════════════════════════
 // STATS
 // ═══════════════════════════════════════════════
 function calcStats(trades) {
@@ -487,7 +439,7 @@ function calcStats(trades) {
   const grossWin = wins.reduce((s,t) => s + t.pnl, 0);
   const grossLoss = Math.abs(losses.reduce((s,t) => s + t.pnl, 0));
   const pf = grossLoss ? grossWin / grossLoss : grossWin > 0 ? Infinity : 0;
-  const avgR = trades.filter(t=>t.r).reduce((s,t)=>s+t.r,0) / (trades.filter(t=>t.r).length||1);
+  const avgR = trades.filter(t=>t.rr).reduce((s,t)=>s+(t.rr||0),0) / (trades.filter(t=>t.rr).length||1);
   const maxWin = wins.length ? Math.max(...wins.map(t=>t.pnl)) : 0;
   const maxLoss = losses.length ? Math.abs(Math.min(...losses.map(t=>t.pnl))) : 0;
   let peak = state.settings.startBalance, bal = peak, maxDD = 0;
@@ -563,7 +515,6 @@ function handleImageUpload(files) {
   for (const f of toLoad) {
     const reader = new FileReader();
     reader.onload = e => {
-      // Compress if > 500KB
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
@@ -707,7 +658,7 @@ function showCalDetail(date) {
   $('cal-detail').style.display = 'block';
   $('cal-detail-title').textContent = new Date(date+'T00:00:00').toLocaleDateString(lang==='th'?'th-TH':'en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
   $('cal-detail-body').innerHTML = trades.length ?
-    `<table class="trade-table"><thead><tr><th>${t('symbol')}</th><th>${t('direction')}</th><th>${t('entryPrice')}</th><th>${t('exitPrice')}</th><th>${t('pnl')}</th><th>${t('rMultiple')}</th><th>${t('result')}</th></tr></thead><tbody>${trades.map(tr=>`<tr><td><b>${tr.symbol}</b></td><td><span class="badge badge-${tr.direction==='Long'?'long':'short'}">${tr.direction==='Long'?t('long'):t('short')}</span></td><td class="mono">${tr.entry||'—'}</td><td class="mono">${tr.exit||'—'}</td><td class="mono ${(tr.pnl||0)>=0?'c-win':'c-loss'}">${fmt(tr.pnl||0)}</td><td class="mono">${tr.r!=null?tr.r.toFixed(2)+'R':'—'}</td><td><span class="badge badge-${tr.result.toLowerCase()}">${tr.result==='Win'?t('win'):tr.result==='Loss'?t('loss'):t('breakeven')}</span></td></tr>`).join('')}</tbody></table>`
+    `<table class="trade-table"><thead><tr><th>${t('symbol')}</th><th>${t('direction')}</th><th>${t('entryPrice')}</th><th>${t('exitPrice')}</th><th>${t('pnl')}</th><th>${t('result')}</th></tr></thead><tbody>${trades.map(tr=>`<tr><td><b>${tr.symbol}</b></td><td><span class="badge badge-${tr.direction==='Long'?'long':'short'}">${tr.direction==='Long'?t('long'):t('short')}</span></td><td class="mono">${tr.entry||'—'}</td><td class="mono">${tr.exit||'—'}</td><td class="mono ${(tr.pnl||0)>=0?'c-win':'c-loss'}">${fmt(tr.pnl||0)}</td><td><span class="badge badge-${tr.result.toLowerCase()}">${tr.result==='Win'?t('win'):tr.result==='Loss'?t('loss'):t('breakeven')}</span></td></tr>`).join('')}</tbody></table>`
     : `<div class="empty" style="padding:24px"><p>${t('noTradesDay')}</p></div>`;
 }
 
@@ -750,8 +701,9 @@ function renderTrades() {
     <td style="color:var(--text2)">${tr.market||'—'}</td>
     <td><span class="badge badge-${tr.direction==='Long'?'long':'short'}">${tr.direction==='Long'?t('long'):t('short')}</span></td>
     <td class="mono">${tr.entry||'—'}</td><td class="mono">${tr.exit||'—'}</td><td class="mono">${tr.qty||'—'}</td>
-    <td class="mono">${tr.r!=null?tr.r.toFixed(2)+'R':'—'}</td>
+    <td class="mono">${tr.rr!=null?'1:'+tr.rr:'—'}</td>
     <td class="mono ${(tr.pnl||0)>=0?'c-win':'c-loss'}">${fmt(tr.pnl||0)}</td>
+    <td class="mono c-loss">${tr.risk!=null?'-$'+Number(tr.risk).toFixed(2):'—'}</td>
     <td><span class="badge badge-${tr.result.toLowerCase()}">${tr.result==='Win'?t('win'):tr.result==='Loss'?t('loss'):t('breakeven')}</span></td>
     <td style="color:var(--text2);font-size:12px">${tr.strategy||'—'}</td>
     <td>
@@ -944,48 +896,25 @@ function openTradeModal(tradeId) {
     if (!tr) return;
     $('t-symbol').value=tr.symbol||''; $('t-date').value=tr.date||'';
     $('t-direction').value=tr.direction||'Long'; $('t-market').value=tr.market||'Forex';
-    $('t-instrument').value=tr.instrumentType||tr.market||'Forex';
     $('t-entry').value=tr.entry||''; $('t-exit').value=tr.exit||'';
-    $('t-qty').value=tr.qty||''; $('t-pnl').value=tr.pnl||'';
-    $('t-sl').value=tr.sl||''; $('t-tp').value=tr.tp||'';
-    $('t-r').value=tr.r!=null?tr.r:''; $('t-fees').value=tr.fees||'';
+    $('t-qty').value=tr.qty||'';
+    $('t-risk').value=tr.risk!=null?tr.risk:'';
+    $('t-rr-input').value=tr.rr!=null?tr.rr:'';
+    $('t-pnl').value=tr.pnl||'';
     $('t-strategy').value=tr.strategy||''; $('t-result').value=tr.result||'Win';
     $('t-session').value=tr.session||''; $('t-rating').value=tr.rating||'';
     $('t-tags').value=tr.tags||''; $('t-notes').value=tr.notes||'';
-    $('t-pipsize').value=tr.pipSize||'0.0001';
     if (tr.images && tr.images.length) { tradeImages = [...tr.images]; renderImagePreview(); }
-    updateCalcPnL();
   } else {
-    ['t-symbol','t-entry','t-exit','t-qty','t-pnl','t-sl','t-tp','t-r','t-fees','t-strategy','t-tags','t-notes'].forEach(id=>$(id).value='');
+    ['t-symbol','t-entry','t-exit','t-qty','t-risk','t-rr-input','t-pnl','t-strategy','t-tags','t-notes'].forEach(id=>$(id).value='');
     $('t-date').value=new Date().toISOString().slice(0,10);
     $('t-direction').value='Long'; $('t-market').value='Forex';
-    $('t-instrument').value='Forex'; $('t-result').value='Win';
-    $('t-session').value=''; $('t-rating').value=''; $('t-pipsize').value='0.0001';
-    $('t-calc-pnl').textContent='—'; $('t-rr').textContent='—';
+    $('t-result').value='Win';
+    $('t-session').value=''; $('t-rating').value='';
   }
   $('trade-modal').classList.remove('hidden');
 }
 function closeTrade() { $('trade-modal').classList.add('hidden'); editingTradeId=null; }
-
-function updateCalcPnL() {
-  const entry=+$('t-entry').value, exit=+$('t-exit').value, qty=+$('t-qty').value;
-  const instrument=$('t-instrument').value, pipSize=+$('t-pipsize').value||0.0001;
-  const sl=+$('t-sl').value, tp=+$('t-tp').value, dir=$('t-direction').value;
-  // P&L
-  if (entry && exit && qty) {
-    const pnl=calcPnL(entry, exit, qty, instrument, pipSize);
-    if (pnl !== null) {
-      $('t-calc-pnl').textContent=fmt(pnl);
-      $('t-calc-pnl').style.color=pnl>=0?'var(--win)':'var(--loss)';
-      if (!$('t-pnl').value) $('t-pnl').value=pnl.toFixed(2);
-    }
-  }
-  // R:R
-  const rr=calcRR(entry, sl, tp, dir);
-  $('t-rr').textContent=rr ? `1 : ${rr}` : '—';
-  // Show pipsize row only for Forex
-  $('pipsize-row').style.display=instrument==='Forex'?'':'none';
-}
 
 async function saveTradeHandler() {
   const symbol=$('t-symbol').value.trim().toUpperCase();
@@ -994,18 +923,14 @@ async function saveTradeHandler() {
   const pnl=$('t-pnl').value!==''?+$('t-pnl').value:null;
   const entry=$('t-entry').value!==''?+$('t-entry').value:null;
   const exit2=$('t-exit').value!==''?+$('t-exit').value:null;
-  const sl=$('t-sl').value!==''?+$('t-sl').value:null;
-  const tp=$('t-tp').value!==''?+$('t-tp').value:null;
-  let r=$('t-r').value!==''?+$('t-r').value:null;
-  if (r===null&&entry&&sl&&pnl!==null){const risk=Math.abs(entry-sl);if(risk>0)r=+(pnl/risk).toFixed(2);}
+  const risk=$('t-risk').value!==''?+$('t-risk').value:null;
+  const rr=$('t-rr-input').value!==''?+$('t-rr-input').value:null;
   const trade={
     id:editingTradeId||uid2(), symbol, date,
     direction:$('t-direction').value, market:$('t-market').value,
-    instrumentType:$('t-instrument').value,
-    pipSize:+$('t-pipsize').value||0.0001,
-    entry, exit:exit2, pnl, sl, tp, r,
+    entry, exit:exit2, pnl,
+    risk, rr,
     qty:$('t-qty').value?+$('t-qty').value:null,
-    fees:$('t-fees').value?+$('t-fees').value:null,
     strategy:$('t-strategy').value.trim(),
     result:$('t-result').value,
     session:$('t-session').value, rating:$('t-rating').value,
@@ -1044,7 +969,7 @@ window.removeImage = function(idx) { tradeImages.splice(idx,1); renderImagePrevi
 // ═══════════════════════════════════════════════
 function exportCSV() {
   if(!state.trades.length){showToast(t('noExport'));return;}
-  const headers=['id','date','symbol','direction','market','entry','exit','qty','pnl','sl','tp','r','fees','strategy','result','session','rating','tags','notes'];
+  const headers=['id','date','symbol','direction','market','entry','exit','qty','risk','rr','pnl','strategy','result','session','rating','tags','notes'];
   const rows=state.trades.map(t2=>headers.map(h=>JSON.stringify(t2[h]??'')).join(','));
   const csv=[headers.join(','),...rows].join('\n');
   const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
@@ -1063,8 +988,8 @@ function importCSV(file) {
       headers.forEach((h,idx)=>{obj[h]=(vals[idx]||'').replace(/^"|"$/g,'').trim();});
       if(!obj.symbol||!obj.date)continue;
       obj.id=obj.id||uid2(); obj.pnl=obj.pnl?+obj.pnl:null; obj.entry=obj.entry?+obj.entry:null;
-      obj.exit=obj.exit?+obj.exit:null; obj.r=obj.r?+obj.r:null; obj.qty=obj.qty?+obj.qty:null;
-      obj.fees=obj.fees?+obj.fees:null; obj.sl=obj.sl?+obj.sl:null; obj.tp=obj.tp?+obj.tp:null;
+      obj.exit=obj.exit?+obj.exit:null; obj.risk=obj.risk?+obj.risk:null; obj.rr=obj.rr?+obj.rr:null;
+      obj.qty=obj.qty?+obj.qty:null;
       obj.direction=obj.direction||'Long'; obj.result=obj.result||'Win';
       if(!state.trades.find(t2=>t2.id===obj.id)){state.trades.push(obj); await saveTrade(obj); count++;}
     }
@@ -1086,13 +1011,16 @@ async function loadDemo() {
     const sym=symbols[Math.floor(Math.random()*symbols.length)];
     const win=Math.random()>.42;
     const pnl=win?+(Math.random()*450+30).toFixed(2):-(Math.random()*300+20).toFixed(2);
+    const risk=+(Math.random()*100+20).toFixed(2);
+    const rr=+(Math.random()*3+0.5).toFixed(1);
     const trade={
       id:uid2(), date, symbol:sym, direction:Math.random()>.5?'Long':'Short',
       market:markets[Math.floor(Math.random()*markets.length)], entry:+(100+Math.random()*50).toFixed(2),
       exit:+(100+Math.random()*50).toFixed(2), pnl, result:win?'Win':'Loss',
-      r:+(pnl/100).toFixed(2), strategy:strats[Math.floor(Math.random()*strats.length)],
+      risk, rr,
+      strategy:strats[Math.floor(Math.random()*strats.length)],
       session:sessions[Math.floor(Math.random()*sessions.length)], qty:+(Math.random()*2+0.1).toFixed(2),
-      fees:+(Math.random()*5).toFixed(2), tags:'', notes:'', hour:Math.floor(Math.random()*24), images:[]
+      tags:'', notes:'', hour:Math.floor(Math.random()*24), images:[]
     };
     state.trades.push(trade); await saveTrade(trade);
   }
@@ -1157,11 +1085,6 @@ document.addEventListener('DOMContentLoaded', () => {
   $('modal-cancel').addEventListener('click', closeTrade);
   $('modal-save').addEventListener('click', saveTradeHandler);
   $('trade-modal').addEventListener('click', e => { if(e.target===$('trade-modal'))closeTrade(); });
-
-  // Auto-calc P&L listeners
-  ['t-entry','t-exit','t-qty','t-sl','t-tp','t-instrument','t-pipsize','t-direction'].forEach(id => {
-    const el=$(id); if(el) el.addEventListener('input', updateCalcPnL);
-  });
 
   // Image upload
   $('img-upload-btn').addEventListener('click', () => $('img-file-input').click());
@@ -1391,12 +1314,6 @@ select.filter-input{cursor:pointer;}
 select.form-input{cursor:pointer;}
 textarea.form-input{resize:vertical;min-height:70px;}
 
-/* CALC BOX */
-.calc-box{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.calc-item{display:flex;flex-direction:column;gap:3px;}
-.calc-label{font-size:11px;color:var(--text3);}
-.calc-val{font-size:16px;font-weight:700;font-family:var(--mono);}
-
 /* IMAGE UPLOAD */
 .img-upload-area{border:2px dashed var(--border2);border-radius:var(--radius);padding:16px;text-align:center;cursor:pointer;transition:all .15s;color:var(--text2);}
 .img-upload-area:hover{border-color:var(--accent);color:var(--accent);}
@@ -1463,7 +1380,6 @@ input[type=range]{width:100%;accent-color:var(--accent);}
   .form-row{grid-template-columns:1fr;}
   .kpi-grid{grid-template-columns:repeat(2,1fr);}
   .mobile-menu-btn{display:flex!important;}
-  .calc-box{grid-template-columns:1fr;}
 }
 .mobile-menu-btn{display:none;}
 </style>
@@ -1679,8 +1595,8 @@ input[type=range]{width:100%;accent-color:var(--accent);}
         <thead><tr>
           <th data-sort="date">วันที่ ↕</th><th data-sort="symbol">สัญลักษณ์ ↕</th>
           <th>ตลาด</th><th>ทิศทาง</th><th data-sort="entry">ราคาเข้า ↕</th>
-          <th>ราคาออก</th><th>Lot</th><th data-sort="r">R ↕</th>
-          <th data-sort="pnl">P&L ↕</th><th>ผล</th><th>กลยุทธ์</th><th></th>
+          <th>ราคาออก</th><th>Lot</th><th data-sort="rr">RR ↕</th>
+          <th data-sort="pnl">P&L ↕</th><th>ความเสี่ยง</th><th>ผล</th><th>กลยุทธ์</th><th></th>
         </tr></thead>
         <tbody id="trades-body"></tbody>
       </table>
@@ -1781,10 +1697,12 @@ input[type=range]{width:100%;accent-color:var(--accent);}
       <button class="icon-btn" id="modal-close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
     </div>
     <div class="modal-body">
+      <!-- Row 1: Symbol + Date -->
       <div class="form-row">
         <div class="form-group"><label class="form-label" data-label="symbol">สัญลักษณ์ *</label><input class="form-input" id="t-symbol" placeholder="EURUSD, BTCUSDT…"/></div>
         <div class="form-group"><label class="form-label" data-label="date">วันที่ *</label><input class="form-input" id="t-date" type="date"/></div>
       </div>
+      <!-- Row 2: Direction + Market -->
       <div class="form-row">
         <div class="form-group"><label class="form-label" data-label="direction">ทิศทาง</label>
           <select class="form-input" id="t-direction"><option value="Long">Long (ซื้อ)</option><option value="Short">Short (ขาย)</option></select>
@@ -1793,53 +1711,35 @@ input[type=range]{width:100%;accent-color:var(--accent);}
           <select class="form-input" id="t-market"><option>Forex</option><option>Crypto</option><option>Stocks</option><option>Futures</option><option>Indices</option></select>
         </div>
       </div>
+      <!-- Row 3: Entry + Exit -->
       <div class="form-row">
-        <div class="form-group"><label class="form-label" data-label="instrumentType">ประเภทสินทรัพย์ (สำหรับคำนวณ P&L)</label>
-          <select class="form-input" id="t-instrument">
-            <option value="Forex">Forex (pip-based)</option>
-            <option value="Crypto">Crypto (price × qty)</option>
-            <option value="Stocks">Stocks (price × shares)</option>
-            <option value="Futures">Futures (price × qty)</option>
-            <option value="Indices">Indices (price × qty)</option>
-          </select>
-        </div>
-        <div class="form-group" id="pipsize-row"><label class="form-label" data-label="pipSize">ขนาด Pip (0.0001 = 4 ทศนิยม)</label>
-          <input class="form-input" id="t-pipsize" type="number" step="any" value="0.0001" placeholder="0.0001"/>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label class="form-label" data-label="entryPrice">ราคาเข้า *</label><input class="form-input" id="t-entry" type="number" step="any" placeholder="0.00"/></div>
+        <div class="form-group"><label class="form-label" data-label="entryPrice">ราคาเข้า</label><input class="form-input" id="t-entry" type="number" step="any" placeholder="0.00"/></div>
         <div class="form-group"><label class="form-label" data-label="exitPrice">ราคาออก</label><input class="form-input" id="t-exit" type="number" step="any" placeholder="0.00"/></div>
       </div>
+      <!-- Row 4: Qty + Risk -->
       <div class="form-row">
         <div class="form-group"><label class="form-label" data-label="qty">จำนวน / Lot</label><input class="form-input" id="t-qty" type="number" step="any" placeholder="1"/></div>
-        <div class="form-group"><label class="form-label" data-label="pnl">กำไร/ขาดทุน ($) — ใส่เองหรือคำนวณอัตโนมัติ</label><input class="form-input" id="t-pnl" type="number" step="any" placeholder="Auto or manual"/></div>
-      </div>
-      <!-- CALC BOX -->
-      <div class="calc-box">
-        <div class="calc-item">
-          <div class="calc-label" data-label="calculatedPnl">กำไร/ขาดทุนที่คำนวณได้</div>
-          <div class="calc-val" id="t-calc-pnl">—</div>
-        </div>
-        <div class="calc-item">
-          <div class="calc-label" data-label="rrRatio">อัตราส่วน R:R</div>
-          <div class="calc-val" id="t-rr">—</div>
+        <div class="form-group">
+          <label class="form-label" data-label="risk">ความเสี่ยง ($)</label>
+          <input class="form-input" id="t-risk" type="number" step="any" placeholder="จำนวนเงินที่ยอมขาดทุน"/>
         </div>
       </div>
+      <!-- Row 5: RR + P&L -->
       <div class="form-row">
-        <div class="form-group"><label class="form-label" data-label="stopLoss">จุดตัดขาดทุน (SL)</label><input class="form-input" id="t-sl" type="number" step="any" placeholder="0.00"/></div>
-        <div class="form-group"><label class="form-label" data-label="takeProfit">จุดทำกำไร (TP)</label><input class="form-input" id="t-tp" type="number" step="any" placeholder="0.00"/></div>
+        <div class="form-group">
+          <label class="form-label" data-label="rrInput">RR (เช่น 2 = 1:2)</label>
+          <input class="form-input" id="t-rr-input" type="number" step="any" placeholder="2"/>
+        </div>
+        <div class="form-group"><label class="form-label" data-label="pnl">กำไร/ขาดทุน ($)</label><input class="form-input" id="t-pnl" type="number" step="any" placeholder="0.00"/></div>
       </div>
-      <div class="form-row">
-        <div class="form-group"><label class="form-label" data-label="rMultiple">R-Multiple</label><input class="form-input" id="t-r" type="number" step="any" placeholder="Auto-calc"/></div>
-        <div class="form-group"><label class="form-label" data-label="fees">ค่าธรรมเนียม</label><input class="form-input" id="t-fees" type="number" step="any" placeholder="0"/></div>
-      </div>
+      <!-- Row 6: Strategy + Result -->
       <div class="form-row">
         <div class="form-group"><label class="form-label" data-label="strategy">กลยุทธ์</label><input class="form-input" id="t-strategy" placeholder="Breakout, ICT…"/></div>
         <div class="form-group"><label class="form-label" data-label="result">ผลลัพธ์</label>
           <select class="form-input" id="t-result"><option value="Win">ชนะ</option><option value="Loss">แพ้</option><option value="Breakeven">เสมอ</option></select>
         </div>
       </div>
+      <!-- Row 7: Session + Rating -->
       <div class="form-row">
         <div class="form-group"><label class="form-label" data-label="session">เซสชั่น</label>
           <select class="form-input" id="t-session"><option value="">—</option><option value="Asia">เอเชีย</option><option value="London">ลอนดอน</option><option value="New York">นิวยอร์ก</option></select>
