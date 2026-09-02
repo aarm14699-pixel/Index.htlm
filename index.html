@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -9,7 +10,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, doc, setDoc, getDoc, getDocs, deleteDoc, query, where, orderBy, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, doc, setDoc, getDoc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDqucfaTAuWdnzmLd6zEoMgLnBewi3rDY0",
@@ -157,9 +158,6 @@ const T = {
 };
 function t(key) { return T[lang][key] || key; }
 
-// ═══════════════════════════════════════════════
-// STATE
-// ═══════════════════════════════════════════════
 let state = {
   trades: [], journals: [], playbooks: [], settings: { startBalance: 10000 },
   portfolios: []
@@ -245,10 +243,6 @@ async function savePlaybook(p) {
   if (!currentUser) return;
   await setDoc(doc(db, 'users', currentUser.uid, 'playbooks', p.id), p);
 }
-async function saveSettings() {
-  if (!currentUser) return;
-  await setDoc(doc(db, 'users', currentUser.uid, 'settings', 'main'), state.settings);
-}
 async function savePortfolioFS(pf) {
   if (!currentUser) return;
   await setDoc(doc(db, 'users', currentUser.uid, 'portfolios', pf.id), pf);
@@ -325,8 +319,19 @@ function calcStats(trades, startBalance) {
 }
 
 // ═══════════════════════════════════════════════
-// PORTFOLIO DROPDOWN
+// PORTFOLIO UI & MANAGER (แก้ไขจุดสำคัญ)
 // ═══════════════════════════════════════════════
+function openPortfolioManager() {
+  renderPortfolioList();
+  $('pf-modal-overlay').classList.remove('hidden');
+}
+
+function closePortfolioManager() {
+  $('pf-modal-overlay').classList.add('hidden');
+  $('pf-form-wrap').classList.add('hidden');
+  editingPortfolioId = null;
+}
+
 function renderPortfolioDropdown() {
   const wrap = $('portfolio-dropdown-wrap');
   if (!wrap) return;
@@ -369,8 +374,10 @@ function renderPortfolioDropdown() {
     e.stopPropagation();
     $('pf-dropdown-menu').classList.toggle('hidden');
   });
+
   $('pf-dropdown-menu').querySelectorAll('.pf-menu-item[data-pfid]').forEach(el => {
-    el.addEventListener('click', () => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
       currentPortfolioId = el.dataset.pfid;
       $('pf-dropdown-menu').classList.add('hidden');
       renderPortfolioDropdown();
@@ -378,11 +385,15 @@ function renderPortfolioDropdown() {
       if (activeView) setView(activeView.id.replace('view-',''));
     });
   });
+
   const manageBtn = $('pf-manage-btn');
-  if (manageBtn) manageBtn.addEventListener('click', () => {
-    $('pf-dropdown-menu').classList.add('hidden');
-    openPortfolioManager();
-  });
+  if (manageBtn) {
+    manageBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      $('pf-dropdown-menu').classList.add('hidden');
+      openPortfolioManager();
+    });
+  }
 }
 
 document.addEventListener('click', () => {
@@ -390,18 +401,6 @@ document.addEventListener('click', () => {
   if (menu) menu.classList.add('hidden');
 });
 
-// ═══════════════════════════════════════════════
-// PORTFOLIO MANAGER MODAL
-// ═══════════════════════════════════════════════
-function openPortfolioManager() {
-  renderPortfolioList();
-  $('pf-modal').classList.remove('hidden');
-}
-function closePortfolioManager() {
-  $('pf-modal').classList.add('hidden');
-  $('pf-form-wrap').classList.add('hidden');
-  editingPortfolioId = null;
-}
 function renderPortfolioList() {
   const list = $('pf-list');
   if (!list) return;
@@ -436,8 +435,8 @@ function renderPortfolioList() {
         <div class="pf-list-pnl ${pfStats.netPnl>=0?'c-win':'c-loss'}">${fmt(pfStats.netPnl)}</div>
         <div class="pf-list-wr">${pfTrades.length?pfStats.wr.toFixed(0)+'% WR':'—'}</div>
         <div style="display:flex;gap:6px;margin-top:8px">
-          <button class="action-btn" onclick="editPortfolioItem('${p.id}')">✏</button>
-          ${!p.isDefault?`<button class="action-btn danger" onclick="deletePortfolioItem('${p.id}')">🗑</button>`:''}
+          <button class="action-btn" onclick="window.editPortfolioItem('${p.id}')">✏</button>
+          ${!p.isDefault?`<button class="action-btn danger" onclick="window.deletePortfolioItem('${p.id}')">🗑</button>`:''}
         </div>
       </div>
     </div>`;
@@ -822,7 +821,7 @@ function renderTrades() {
 }
 
 // ═══════════════════════════════════════════════
-// ANALYTICS
+// ANALYTICS, HEATMAP, JOURNAL, PLAYBOOK, RISK LAB
 // ═══════════════════════════════════════════════
 function renderAnalytics() {
   const trades = getActiveTrades();
@@ -884,9 +883,6 @@ function renderAnalytics() {
   ].map(([label,val,cls])=>`<div class="stat-row"><span class="stat-label">${label}</span><span class="stat-val ${cls}">${val}</span></div>`).join('');
 }
 
-// ═══════════════════════════════════════════════
-// HEATMAP
-// ═══════════════════════════════════════════════
 function renderHeatmap() {
   const trades = getActiveTrades();
   const days = [t('sun'),t('mon'),t('tue'),t('wed'),t('thu'),t('fri'),t('sat')];
@@ -914,9 +910,6 @@ function renderHeatmap() {
   $('heatmap-wrap').innerHTML=html;
 }
 
-// ═══════════════════════════════════════════════
-// JOURNAL
-// ═══════════════════════════════════════════════
 function renderJournal() {
   const entries=[...state.journals].sort((a,b)=>new Date(b.date)-new Date(a.date));
   $('journal-empty').style.display=entries.length?'none':'';
@@ -930,9 +923,6 @@ function renderJournal() {
   </div>`).join('');
 }
 
-// ═══════════════════════════════════════════════
-// PLAYBOOK
-// ═══════════════════════════════════════════════
 function renderPlaybook() {
   $('pb-empty').style.display=state.playbooks.length?'none':'';
   $('playbook-list').innerHTML=state.playbooks.map(pb=>{
@@ -954,9 +944,6 @@ function renderPlaybook() {
   }).join('');
 }
 
-// ═══════════════════════════════════════════════
-// RISK LAB
-// ═══════════════════════════════════════════════
 function renderRisk() {
   const trades = getActiveTrades();
   const s=calcStats(trades, getPortfolioStartBalance());
@@ -1086,7 +1073,7 @@ window.deletePlaybookItem = async function(id) {
 };
 
 // ═══════════════════════════════════════════════
-// CSV
+// CSV & DEMO
 // ═══════════════════════════════════════════════
 function exportCSV() {
   const trades = getActiveTrades();
@@ -1152,7 +1139,7 @@ async function loadDemo() {
 }
 
 // ═══════════════════════════════════════════════
-// INIT
+// INIT & DOM EVENTS
 // ═══════════════════════════════════════════════
 onAuthStateChanged(auth, async user => {
   currentUser = user;
@@ -1273,8 +1260,9 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   $('mobileMenuBtn').addEventListener('click', () => $('sidebar').classList.toggle('open'));
 
+  // Bind Portfolio Manager
   $('pf-modal-close').addEventListener('click', closePortfolioManager);
-  $('pf-modal-overlay').addEventListener('click', e => { if(e.target===$('pf-modal-overlay'))closePortfolioManager(); });
+  $('pf-modal-overlay').addEventListener('click', e => { if(e.target === $('pf-modal-overlay')) closePortfolioManager(); });
   $('pf-new-btn').addEventListener('click', () => openPortfolioForm(null));
   $('pf-form-cancel').addEventListener('click', () => { $('pf-form-wrap').classList.add('hidden'); editingPortfolioId=null; });
   $('pf-form-save').addEventListener('click', savePortfolioHandler);
@@ -1375,8 +1363,8 @@ body{font-family:var(--ff);background:var(--bg);color:var(--text);font-size:14px
 .pf-list-left{display:flex;align-items:flex-start;gap:12px;flex:1;}
 .pf-list-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;margin-top:3px;}
 .pf-list-name{font-weight:600;font-size:14px;display:flex;align-items:center;gap:8px;}
-.pf-list-meta{font-size:11px;color:var(--text3);margin-top:3px;display:flex;align-items:center;flex-wrap:wrap;gap:4px;}
-.pf-meta-sep{color:var(--border2);}
+.pf-list-meta{font-size:11px;color:var(--text3);margin-top:3px;display:flex;align-items:center;flex-wrap:gap:4px;}
+.pf-meta-sep{color:var(--border2);margin:0 4px;}
 .pf-list-desc{font-size:12px;color:var(--text2);margin-top:4px;}
 .pf-list-right{text-align:right;flex-shrink:0;}
 .pf-list-pnl{font-size:16px;font-weight:700;font-family:var(--mono);}
@@ -1793,8 +1781,9 @@ input[type=range]{width:100%;accent-color:var(--accent);}
   </div>
 </div>
 
+<!-- PORTFOLIO MANAGER MODAL (แก้ ID และโครงสร้างตรงนี้) -->
 <div class="pf-modal-overlay hidden" id="pf-modal-overlay">
-  <div class="pf-modal" id="pf-modal">
+  <div class="pf-modal">
     <div class="pf-modal-head">
       <div class="pf-modal-title">📂 จัดการพอร์ต</div>
       <button class="icon-btn" id="pf-modal-close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
@@ -1870,3 +1859,4 @@ input[type=range]{width:100%;accent-color:var(--accent);}
 <input type="file" id="csv-import-input" accept=".csv" style="display:none"/>
 </body>
 </html>
+
