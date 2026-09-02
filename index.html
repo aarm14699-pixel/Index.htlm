@@ -3,14 +3,13 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>TradeFlow — Trading Journal</title>
+<title>คุณอาร์ม จดๆๆ — Trading Journal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<!-- Firebase -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, doc, setDoc, getDoc, getDocs, deleteDoc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, doc, setDoc, getDoc, getDocs, deleteDoc, query, where, orderBy, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDqucfaTAuWdnzmLd6zEoMgLnBewi3rDY0",
@@ -33,312 +32,127 @@ const googleProvider = new GoogleAuthProvider();
 let lang = localStorage.getItem('tf_lang') || 'th';
 const T = {
   th: {
-    appName: 'TradeFlow',
-    dashboard: 'แดชบอร์ด',
-    calendar: 'ปฏิทิน',
-    allTrades: 'เทรดทั้งหมด',
-    analytics: 'วิเคราะห์',
-    heatmap: 'แผนที่ความร้อน',
-    journal: 'บันทึก',
-    playbook: 'กลยุทธ์',
-    riskLab: 'คำนวณความเสี่ยง',
-    importCSV: 'นำเข้า CSV',
-    exportCSV: 'ส่งออก CSV',
-    loadDemo: 'โหลดข้อมูลตัวอย่าง',
-    clearAll: 'ล้างข้อมูลทั้งหมด',
-    newTrade: '+ เพิ่มเทรด',
-    logout: 'ออกจากระบบ',
-    login: 'เข้าสู่ระบบ',
-    register: 'สมัครสมาชิก',
-    loginGoogle: 'เข้าสู่ระบบด้วย Google',
-    email: 'อีเมล',
-    password: 'รหัสผ่าน',
-    netPnl: 'กำไร/ขาดทุนสุทธิ',
-    winRate: 'อัตราชนะ',
-    profitFactor: 'ปัจจัยกำไร',
-    avgWin: 'ชนะเฉลี่ย',
-    avgLoss: 'แพ้เฉลี่ย',
-    maxDD: 'Drawdown สูงสุด',
-    balance: 'ยอดเงิน',
-    totalTrades: 'เทรดทั้งหมด',
-    symbol: 'สัญลักษณ์',
-    date: 'วันที่',
-    direction: 'ทิศทาง',
-    market: 'ตลาด',
-    entryPrice: 'ราคาเข้า',
-    exitPrice: 'ราคาออก',
-    qty: 'จำนวน / Lot',
-    pnl: 'กำไร/ขาดทุน ($)',
-    risk: 'ความเสี่ยง ($)',
-    rrInput: 'RR (เช่น 2 = 1:2)',
-    strategy: 'กลยุทธ์',
-    result: 'ผลลัพธ์',
-    session: 'เซสชั่น',
-    rating: 'คะแนน (1-5)',
-    tags: 'แท็ก (คั่นด้วยจุลภาค)',
-    notes: 'หมายเหตุ',
-    images: 'รูปภาพ (สูงสุด 4 รูป)',
-    save: 'บันทึก',
-    cancel: 'ยกเลิก',
-    logNewTrade: 'บันทึกเทรดใหม่',
-    editTrade: 'แก้ไขเทรด',
-    win: 'ชนะ',
-    loss: 'แพ้',
-    breakeven: 'เสมอ',
-    long: 'ซื้อ (Long)',
-    short: 'ขาย (Short)',
-    forex: 'ฟอเร็กซ์',
-    crypto: 'คริปโต',
-    stocks: 'หุ้น',
-    futures: 'ฟิวเจอร์ส',
-    indices: 'ดัชนี',
-    asia: 'เอเชีย',
-    london: 'ลอนดอน',
-    newYork: 'นิวยอร์ก',
-    equityCurve: 'กราฟยอดเงิน',
-    winLoss: 'ชนะ / แพ้',
-    streak: 'ความต่อเนื่อง',
-    pnlByStrategy: 'กำไร/ขาดทุนตามกลยุทธ์',
-    recentTrades: 'เทรดล่าสุด',
-    currentWinStreak: 'ชนะติดต่อกันปัจจุบัน',
-    bestWinStreak: 'ชนะติดต่อกันสูงสุด',
-    currentLossStreak: 'แพ้ติดต่อกันปัจจุบัน',
-    worstLossStreak: 'แพ้ติดต่อกันมากที่สุด',
-    noTrades: 'ยังไม่มีเทรด',
-    noTradesDesc: 'บันทึกเทรดแรกของคุณเพื่อเริ่มติดตาม',
-    newEntry: '+ บันทึกใหม่',
-    addStrategy: '+ เพิ่มกลยุทธ์',
-    mood: 'อารมณ์',
-    title: 'หัวข้อ',
-    entry: 'เนื้อหา',
-    sharpe: 'อัตราส่วน Sharpe',
-    expectancy: 'ค่าเฉลี่ยต่อเทรด',
-    avgR: 'R-Multiple เฉลี่ย',
-    pnlDist: 'การกระจายกำไร/ขาดทุน',
-    drawdown: 'Drawdown',
-    pnlByDow: 'กำไร/ขาดทุนตามวัน',
-    winRateBySymbol: 'อัตราชนะตามสัญลักษณ์',
-    advStats: 'สถิติขั้นสูง',
-    posCalc: 'คำนวณขนาดโพซิชั่น',
-    monteCarlo: 'Monte Carlo Simulation',
-    runSim: 'รันการจำลอง',
-    search: 'ค้นหาสัญลักษณ์ หมายเหตุ แท็ก...',
-    allResults: 'ผลลัพธ์ทั้งหมด',
-    allDirections: 'ทิศทางทั้งหมด',
-    allMarkets: 'ตลาดทั้งหมด',
-    reset: 'รีเซ็ต',
-    performanceCal: 'ปฏิทินผลการดำเนินงาน',
-    today: 'วันนี้',
-    dayDetails: 'รายละเอียดวัน',
-    noTradesDay: 'ไม่มีเทรดในวันนี้',
-    startBalance: 'ยอดเงินเริ่มต้น',
-    accountBalance: 'ยอดเงินบัญชี',
-    riskPerTrade: 'ความเสี่ยงต่อเทรด',
-    slPips: 'Stop Loss (pip/จุด)',
-    pipVal: 'มูลค่า Pip',
-    posSize: 'ขนาดโพซิชั่นที่แนะนำ',
-    maxLoss: 'ขาดทุนสูงสุด',
-    stratName: 'ชื่อกลยุทธ์',
-    desc: 'คำอธิบาย',
-    markets: 'ตลาด',
-    timeframes: 'กรอบเวลา',
-    rules: 'กฎ (บรรทัดละ 1 ข้อ)',
-    uploadImages: 'อัปโหลดรูปภาพ',
-    clickToUpload: 'คลิกเพื่ออัปโหลด',
-    deleteImage: 'ลบรูป',
-    saving: 'กำลังบันทึก...',
-    loading: 'กำลังโหลด...',
-    deleteConfirm: 'ยืนยันการลบ?',
-    clearConfirm: 'ล้างข้อมูลทั้งหมด? ไม่สามารถย้อนกลับได้',
-    demoConfirm: 'โหลดข้อมูลตัวอย่าง? จะเพิ่มเทรดตัวอย่างเข้ามา',
-    tradeLogged: 'บันทึกเทรดสำเร็จ ✓',
-    tradeUpdated: 'อัปเดตเทรดสำเร็จ ✓',
-    tradeDeleted: 'ลบเทรดแล้ว',
-    entrySaved: 'บันทึกสำเร็จ ✓',
-    stratSaved: 'บันทึกกลยุทธ์สำเร็จ ✓',
-    exported: 'ส่งออกสำเร็จ ✓',
-    imported: 'นำเข้าสำเร็จ ✓',
-    demoLoaded: 'โหลดข้อมูลตัวอย่างสำเร็จ ✓',
-    cleared: 'ล้างข้อมูลแล้ว',
-    fillRequired: 'กรุณากรอกข้อมูลที่จำเป็น',
-    noExport: 'ไม่มีข้อมูลที่จะส่งออก',
-    noSimulate: 'ไม่มีข้อมูลสำหรับการจำลอง',
-    simDone: 'จำลอง 1,000 เส้นทางสำเร็จ ✓',
-    freeTag: 'ฟรี • เต็มฟีเจอร์',
-    subTitle: 'ไม่มีล็อค · ฟีเจอร์เต็ม · ฟรีตลอดชีพ',
-    noJournal: 'ยังไม่มีบันทึก',
-    noJournalDesc: 'เขียนความคิด บทเรียน และหมายเหตุ',
-    noPlaybook: 'ยังไม่มีกลยุทธ์',
-    noPlaybookDesc: 'บันทึกกลยุทธ์และกฎการเทรดของคุณ',
-    delete: 'ลบ',
-    edit: 'แก้ไข',
-    trades: 'เทรด',
-    fromDate: 'จากวันที่',
-    toDate: 'ถึงวันที่',
-    noMatchTrade: 'ไม่พบเทรด',
-    noMatchDesc: 'บันทึกเทรดแรกหรือรีเซ็ตตัวกรอง',
-    heatmapTitle: 'แผนที่ความร้อน P&L — ชั่วโมง × วัน',
-    heatmapSub: 'ค้นหาช่วงเวลาซื้อขายที่ดีที่สุด',
-    loginTitle: 'เข้าสู่ระบบ TradeFlow',
-    noAccount: 'ยังไม่มีบัญชี?',
-    haveAccount: 'มีบัญชีแล้ว?',
-    orDivider: 'หรือ',
-    welcomeBack: 'ยินดีต้อนรับกลับ',
+    appName:'คุณอาร์ม จดๆๆ', dashboard:'แดชบอร์ด', calendar:'ปฏิทิน', allTrades:'เทรดทั้งหมด',
+    analytics:'วิเคราะห์', heatmap:'แผนที่ความร้อน', journal:'บันทึก', playbook:'กลยุทธ์',
+    riskLab:'คำนวณความเสี่ยง', importCSV:'นำเข้า CSV', exportCSV:'ส่งออก CSV',
+    loadDemo:'โหลดข้อมูลตัวอย่าง', clearAll:'ล้างข้อมูลทั้งหมด', newTrade:'+ เพิ่มเทรด',
+    logout:'ออกจากระบบ', login:'เข้าสู่ระบบ', register:'สมัครสมาชิก', loginGoogle:'เข้าสู่ระบบด้วย Google',
+    email:'อีเมล', password:'รหัสผ่าน', netPnl:'กำไร/ขาดทุนสุทธิ', winRate:'อัตราชนะ',
+    profitFactor:'ปัจจัยกำไร', avgWin:'ชนะเฉลี่ย', avgLoss:'แพ้เฉลี่ย', maxDD:'Drawdown สูงสุด',
+    balance:'ยอดเงิน', totalTrades:'เทรดทั้งหมด', symbol:'สัญลักษณ์', date:'วันที่',
+    direction:'ทิศทาง', market:'ตลาด', entryPrice:'ราคาเข้า', exitPrice:'ราคาออก',
+    qty:'จำนวน / Lot', pnl:'กำไร/ขาดทุน ($)', risk:'ความเสี่ยง ($)', rrInput:'RR (เช่น 2 = 1:2)',
+    strategy:'กลยุทธ์', result:'ผลลัพธ์', session:'เซสชั่น', rating:'คะแนน (1-5)',
+    tags:'แท็ก (คั่นด้วยจุลภาค)', notes:'หมายเหตุ', images:'รูปภาพ (สูงสุด 4 รูป)',
+    save:'บันทึก', cancel:'ยกเลิก', logNewTrade:'บันทึกเทรดใหม่', editTrade:'แก้ไขเทรด',
+    win:'ชนะ', loss:'แพ้', breakeven:'เสมอ', long:'ซื้อ (Long)', short:'ขาย (Short)',
+    forex:'ฟอเร็กซ์', crypto:'คริปโต', stocks:'หุ้น', futures:'ฟิวเจอร์ส', indices:'ดัชนี',
+    asia:'เอเชีย', london:'ลอนดอน', newYork:'นิวยอร์ก', equityCurve:'กราฟยอดเงิน',
+    winLoss:'ชนะ / แพ้', streak:'ความต่อเนื่อง', pnlByStrategy:'กำไร/ขาดทุนตามกลยุทธ์',
+    recentTrades:'เทรดล่าสุด', currentWinStreak:'ชนะติดต่อกันปัจจุบัน',
+    bestWinStreak:'ชนะติดต่อกันสูงสุด', currentLossStreak:'แพ้ติดต่อกันปัจจุบัน',
+    worstLossStreak:'แพ้ติดต่อกันมากที่สุด', noTrades:'ยังไม่มีเทรด',
+    noTradesDesc:'บันทึกเทรดแรกของคุณเพื่อเริ่มติดตาม', newEntry:'+ บันทึกใหม่',
+    addStrategy:'+ เพิ่มกลยุทธ์', mood:'อารมณ์', title:'หัวข้อ', entry:'เนื้อหา',
+    sharpe:'อัตราส่วน Sharpe', expectancy:'ค่าเฉลี่ยต่อเทรด', avgR:'R-Multiple เฉลี่ย',
+    pnlDist:'การกระจายกำไร/ขาดทุน', drawdown:'Drawdown', pnlByDow:'กำไร/ขาดทุนตามวัน',
+    winRateBySymbol:'อัตราชนะตามสัญลักษณ์', advStats:'สถิติขั้นสูง',
+    posCalc:'คำนวณขนาดโพซิชั่น', monteCarlo:'Monte Carlo Simulation', runSim:'รันการจำลอง',
+    search:'ค้นหาสัญลักษณ์ หมายเหตุ แท็ก...', allResults:'ผลลัพธ์ทั้งหมด',
+    allDirections:'ทิศทางทั้งหมด', allMarkets:'ตลาดทั้งหมด', reset:'รีเซ็ต',
+    performanceCal:'ปฏิทินผลการดำเนินงาน', today:'วันนี้', dayDetails:'รายละเอียดวัน',
+    noTradesDay:'ไม่มีเทรดในวันนี้', startBalance:'ยอดเงินเริ่มต้น',
+    accountBalance:'ยอดเงินบัญชี', riskPerTrade:'ความเสี่ยงต่อเทรด',
+    slPips:'Stop Loss (pip/จุด)', pipVal:'มูลค่า Pip', posSize:'ขนาดโพซิชั่นที่แนะนำ',
+    maxLoss:'ขาดทุนสูงสุด', stratName:'ชื่อกลยุทธ์', desc:'คำอธิบาย', markets:'ตลาด',
+    timeframes:'กรอบเวลา', rules:'กฎ (บรรทัดละ 1 ข้อ)', uploadImages:'อัปโหลดรูปภาพ',
+    clickToUpload:'คลิกเพื่ออัปโหลด', deleteImage:'ลบรูป', saving:'กำลังบันทึก...',
+    loading:'กำลังโหลด...', deleteConfirm:'ยืนยันการลบ?',
+    clearConfirm:'ล้างข้อมูลทั้งหมด? ไม่สามารถย้อนกลับได้',
+    demoConfirm:'โหลดข้อมูลตัวอย่าง? จะเพิ่มเทรดตัวอย่างเข้ามา',
+    tradeLogged:'บันทึกเทรดสำเร็จ ✓', tradeUpdated:'อัปเดตเทรดสำเร็จ ✓',
+    tradeDeleted:'ลบเทรดแล้ว', entrySaved:'บันทึกสำเร็จ ✓', stratSaved:'บันทึกกลยุทธ์สำเร็จ ✓',
+    exported:'ส่งออกสำเร็จ ✓', imported:'นำเข้าสำเร็จ ✓', demoLoaded:'โหลดข้อมูลตัวอย่างสำเร็จ ✓',
+    cleared:'ล้างข้อมูลแล้ว', fillRequired:'กรุณากรอกข้อมูลที่จำเป็น',
+    noExport:'ไม่มีข้อมูลที่จะส่งออก', noSimulate:'ไม่มีข้อมูลสำหรับการจำลอง',
+    simDone:'จำลอง 1,000 เส้นทางสำเร็จ ✓', freeTag:'ฟรี • เต็มฟีเจอร์',
+    subTitle:'ไม่มีล็อค · ฟีเจอร์เต็ม · ฟรีตลอดชีพ', noJournal:'ยังไม่มีบันทึก',
+    noJournalDesc:'เขียนความคิด บทเรียน และหมายเหตุ', noPlaybook:'ยังไม่มีกลยุทธ์',
+    noPlaybookDesc:'บันทึกกลยุทธ์และกฎการเทรดของคุณ', delete:'ลบ', edit:'แก้ไข',
+    trades:'เทรด', fromDate:'จากวันที่', toDate:'ถึงวันที่', noMatchTrade:'ไม่พบเทรด',
+    noMatchDesc:'บันทึกเทรดแรกหรือรีเซ็ตตัวกรอง', heatmapTitle:'แผนที่ความร้อน P&L — ชั่วโมง × วัน',
+    heatmapSub:'ค้นหาช่วงเวลาซื้อขายที่ดีที่สุด', loginTitle:'เข้าสู่ระบบ คุณอาร์ม จดๆๆ',
+    noAccount:'ยังไม่มีบัญชี?', haveAccount:'มีบัญชีแล้ว?', orDivider:'หรือ', welcomeBack:'ยินดีต้อนรับกลับ',
     sun:'อา', mon:'จ', tue:'อ', wed:'พ', thu:'พฤ', fri:'ศ', sat:'ส',
+    managePortfolios:'จัดการพอร์ต', allPortfolios:'ทุกพอร์ต', newPortfolio:'+ สร้างพอร์ตใหม่',
+    portfolioName:'ชื่อพอร์ต', portfolioDesc:'คำอธิบาย', portfolioBalance:'เงินเริ่มต้น ($)',
+    portfolioTarget:'เป้าหมาย Balance ($)', portfolioBroker:'Broker', portfolioCurrency:'สกุลเงิน',
+    portfolioColor:'สีพอร์ต', portfolioSaved:'บันทึกพอร์ตสำเร็จ ✓', portfolioDeleted:'ลบพอร์ตแล้ว เทรดย้ายไป Default',
+    portfolioDeleteConfirm:'ลบพอร์ตนี้? เทรดทั้งหมดจะย้ายไปพอร์ต Default อัตโนมัติ',
+    portfolioNameRequired:'กรุณาใส่ชื่อพอร์ต', defaultPortfolio:'Default',
+    targetOptional:'(ไม่บังคับ)', portfolioProgress:'ความคืบหน้า', portfolio:'พอร์ต',
+    editPortfolio:'แก้ไขพอร์ต', createPortfolio:'สร้างพอร์ตใหม่',
   },
   en: {
-    appName: 'TradeFlow',
-    dashboard: 'Dashboard',
-    calendar: 'Calendar',
-    allTrades: 'All Trades',
-    analytics: 'Analytics',
-    heatmap: 'Heatmap',
-    journal: 'Journal',
-    playbook: 'Playbook',
-    riskLab: 'Risk Lab',
-    importCSV: 'Import CSV',
-    exportCSV: 'Export CSV',
-    loadDemo: 'Load Demo Data',
-    clearAll: 'Clear All Data',
-    newTrade: '+ New Trade',
-    logout: 'Logout',
-    login: 'Login',
-    register: 'Register',
-    loginGoogle: 'Continue with Google',
-    email: 'Email',
-    password: 'Password',
-    netPnl: 'Net P&L',
-    winRate: 'Win Rate',
-    profitFactor: 'Profit Factor',
-    avgWin: 'Avg Win',
-    avgLoss: 'Avg Loss',
-    maxDD: 'Max Drawdown',
-    balance: 'Balance',
-    totalTrades: 'Total Trades',
-    symbol: 'Symbol',
-    date: 'Date',
-    direction: 'Direction',
-    market: 'Market',
-    entryPrice: 'Entry Price',
-    exitPrice: 'Exit Price',
-    qty: 'Quantity / Lots',
-    pnl: 'P&L ($)',
-    risk: 'Risk ($)',
-    rrInput: 'RR (e.g. 2 = 1:2)',
-    strategy: 'Strategy',
-    result: 'Result',
-    session: 'Session',
-    rating: 'Rating (1-5)',
-    tags: 'Tags (comma-separated)',
-    notes: 'Notes',
-    images: 'Images (max 4)',
-    save: 'Save',
-    cancel: 'Cancel',
-    logNewTrade: 'Log New Trade',
-    editTrade: 'Edit Trade',
-    win: 'Win',
-    loss: 'Loss',
-    breakeven: 'Breakeven',
-    long: 'Long',
-    short: 'Short',
-    forex: 'Forex',
-    crypto: 'Crypto',
-    stocks: 'Stocks',
-    futures: 'Futures',
-    indices: 'Indices',
-    asia: 'Asia',
-    london: 'London',
-    newYork: 'New York',
-    equityCurve: 'Equity Curve',
-    winLoss: 'Win / Loss',
-    streak: 'Streak',
-    pnlByStrategy: 'P&L by Strategy',
-    recentTrades: 'Recent Trades',
-    currentWinStreak: 'Current Win Streak',
-    bestWinStreak: 'Best Win Streak',
-    currentLossStreak: 'Current Loss Streak',
-    worstLossStreak: 'Worst Loss Streak',
-    noTrades: 'No trades yet',
-    noTradesDesc: 'Log your first trade to start tracking.',
-    newEntry: '+ New Entry',
-    addStrategy: '+ Add Strategy',
-    mood: 'Mood',
-    title: 'Title',
-    entry: 'Entry',
-    sharpe: 'Sharpe Ratio',
-    expectancy: 'Expectancy / trade',
-    avgR: 'Avg R-Multiple',
-    pnlDist: 'P&L Distribution',
-    drawdown: 'Drawdown',
-    pnlByDow: 'P&L by Day of Week',
-    winRateBySymbol: 'Win Rate by Symbol',
-    advStats: 'Advanced Stats',
-    posCalc: 'Position Size Calculator',
-    monteCarlo: 'Monte Carlo Simulation',
-    runSim: 'Run Simulation',
-    search: 'Search symbol, note, tag…',
-    allResults: 'All Results',
-    allDirections: 'All Directions',
-    allMarkets: 'All Markets',
-    reset: 'Reset',
-    performanceCal: 'Performance Calendar',
-    today: 'Today',
-    dayDetails: 'Day Details',
-    noTradesDay: 'No trades on this day.',
-    startBalance: 'Starting Balance',
-    accountBalance: 'Account Balance',
-    riskPerTrade: 'Risk per Trade',
-    slPips: 'Stop Loss (pips/pts)',
-    pipVal: 'Pip Value',
-    posSize: 'Recommended Position Size',
-    maxLoss: 'Max loss',
-    stratName: 'Strategy Name',
-    desc: 'Description',
-    markets: 'Market(s)',
-    timeframes: 'Timeframe(s)',
-    rules: 'Rules (one per line)',
-    uploadImages: 'Upload Images',
-    clickToUpload: 'Click to upload',
-    deleteImage: 'Delete image',
-    saving: 'Saving...',
-    loading: 'Loading...',
-    deleteConfirm: 'Delete this?',
-    clearConfirm: 'Clear ALL data? This cannot be undone.',
-    demoConfirm: 'Load demo data? This will add sample trades.',
-    tradeLogged: 'Trade logged ✓',
-    tradeUpdated: 'Trade updated ✓',
-    tradeDeleted: 'Trade deleted',
-    entrySaved: 'Entry saved ✓',
-    stratSaved: 'Strategy saved ✓',
-    exported: 'Exported ✓',
-    imported: 'Imported ✓',
-    demoLoaded: 'Demo data loaded ✓',
-    cleared: 'All data cleared',
-    fillRequired: 'Symbol and date are required',
-    noExport: 'No trades to export',
-    noSimulate: 'No trades to simulate',
-    simDone: 'Monte Carlo: 1,000 paths simulated ✓',
-    freeTag: 'FREE • FULL',
-    subTitle: 'No lock · Full features · Free forever',
-    noJournal: 'No journal entries yet',
-    noJournalDesc: 'Write your thoughts, lessons, and mental notes.',
-    noPlaybook: 'No strategies yet',
-    noPlaybookDesc: 'Document your trading strategies and rules.',
-    delete: 'Del',
-    edit: 'Edit',
-    trades: 'trades',
-    fromDate: 'From date',
-    toDate: 'To date',
-    noMatchTrade: 'No trades found',
-    noMatchDesc: 'Log your first trade or reset filters.',
-    heatmapTitle: 'P&L Heatmap — Hour × Day of Week',
-    heatmapSub: 'Find your best trading windows',
-    loginTitle: 'Login to TradeFlow',
-    noAccount: "Don't have an account?",
-    haveAccount: 'Already have an account?',
-    orDivider: 'or',
-    welcomeBack: 'Welcome back',
+    appName:'Khun Arm Jod Jod Jod', dashboard:'Dashboard', calendar:'Calendar', allTrades:'All Trades',
+    analytics:'Analytics', heatmap:'Heatmap', journal:'Journal', playbook:'Playbook',
+    riskLab:'Risk Lab', importCSV:'Import CSV', exportCSV:'Export CSV',
+    loadDemo:'Load Demo Data', clearAll:'Clear All Data', newTrade:'+ New Trade',
+    logout:'Logout', login:'Login', register:'Register', loginGoogle:'Continue with Google',
+    email:'Email', password:'Password', netPnl:'Net P&L', winRate:'Win Rate',
+    profitFactor:'Profit Factor', avgWin:'Avg Win', avgLoss:'Avg Loss', maxDD:'Max Drawdown',
+    balance:'Balance', totalTrades:'Total Trades', symbol:'Symbol', date:'Date',
+    direction:'Direction', market:'Market', entryPrice:'Entry Price', exitPrice:'Exit Price',
+    qty:'Quantity / Lots', pnl:'P&L ($)', risk:'Risk ($)', rrInput:'RR (e.g. 2 = 1:2)',
+    strategy:'Strategy', result:'Result', session:'Session', rating:'Rating (1-5)',
+    tags:'Tags (comma-separated)', notes:'Notes', images:'Images (max 4)',
+    save:'Save', cancel:'Cancel', logNewTrade:'Log New Trade', editTrade:'Edit Trade',
+    win:'Win', loss:'Loss', breakeven:'Breakeven', long:'Long', short:'Short',
+    forex:'Forex', crypto:'Crypto', stocks:'Stocks', futures:'Futures', indices:'Indices',
+    asia:'Asia', london:'London', newYork:'New York', equityCurve:'Equity Curve',
+    winLoss:'Win / Loss', streak:'Streak', pnlByStrategy:'P&L by Strategy',
+    recentTrades:'Recent Trades', currentWinStreak:'Current Win Streak',
+    bestWinStreak:'Best Win Streak', currentLossStreak:'Current Loss Streak',
+    worstLossStreak:'Worst Loss Streak', noTrades:'No trades yet',
+    noTradesDesc:'Log your first trade to start tracking.', newEntry:'+ New Entry',
+    addStrategy:'+ Add Strategy', mood:'Mood', title:'Title', entry:'Entry',
+    sharpe:'Sharpe Ratio', expectancy:'Expectancy / trade', avgR:'Avg R-Multiple',
+    pnlDist:'P&L Distribution', drawdown:'Drawdown', pnlByDow:'P&L by Day of Week',
+    winRateBySymbol:'Win Rate by Symbol', advStats:'Advanced Stats',
+    posCalc:'Position Size Calculator', monteCarlo:'Monte Carlo Simulation', runSim:'Run Simulation',
+    search:'Search symbol, note, tag…', allResults:'All Results', allDirections:'All Directions',
+    allMarkets:'All Markets', reset:'Reset', performanceCal:'Performance Calendar',
+    today:'Today', dayDetails:'Day Details', noTradesDay:'No trades on this day.',
+    startBalance:'Starting Balance', accountBalance:'Account Balance', riskPerTrade:'Risk per Trade',
+    slPips:'Stop Loss (pips/pts)', pipVal:'Pip Value', posSize:'Recommended Position Size',
+    maxLoss:'Max loss', stratName:'Strategy Name', desc:'Description', markets:'Market(s)',
+    timeframes:'Timeframe(s)', rules:'Rules (one per line)', uploadImages:'Upload Images',
+    clickToUpload:'Click to upload', deleteImage:'Delete image', saving:'Saving...',
+    loading:'Loading...', deleteConfirm:'Delete this?',
+    clearConfirm:'Clear ALL data? This cannot be undone.',
+    demoConfirm:'Load demo data? This will add sample trades.',
+    tradeLogged:'Trade logged ✓', tradeUpdated:'Trade updated ✓', tradeDeleted:'Trade deleted',
+    entrySaved:'Entry saved ✓', stratSaved:'Strategy saved ✓', exported:'Exported ✓',
+    imported:'Imported ✓', demoLoaded:'Demo data loaded ✓', cleared:'All data cleared',
+    fillRequired:'Symbol and date are required', noExport:'No trades to export',
+    noSimulate:'No trades to simulate', simDone:'Monte Carlo: 1,000 paths simulated ✓',
+    freeTag:'FREE • FULL', subTitle:'No lock · Full features · Free forever',
+    noJournal:'No journal entries yet', noJournalDesc:'Write your thoughts, lessons, and mental notes.',
+    noPlaybook:'No strategies yet', noPlaybookDesc:'Document your trading strategies and rules.',
+    delete:'Del', edit:'Edit', trades:'trades', fromDate:'From date', toDate:'To date',
+    noMatchTrade:'No trades found', noMatchDesc:'Log your first trade or reset filters.',
+    heatmapTitle:'P&L Heatmap — Hour × Day of Week', heatmapSub:'Find your best trading windows',
+    loginTitle:'Login to Khun Arm Jod Jod Jod', noAccount:"Don't have an account?",
+    haveAccount:'Already have an account?', orDivider:'or', welcomeBack:'Welcome back',
     sun:'Sun', mon:'Mon', tue:'Tue', wed:'Wed', thu:'Thu', fri:'Fri', sat:'Sat',
+    managePortfolios:'Manage Portfolios', allPortfolios:'All Portfolios', newPortfolio:'+ New Portfolio',
+    portfolioName:'Portfolio Name', portfolioDesc:'Description', portfolioBalance:'Starting Balance ($)',
+    portfolioTarget:'Target Balance ($)', portfolioBroker:'Broker', portfolioCurrency:'Currency',
+    portfolioColor:'Portfolio Color', portfolioSaved:'Portfolio saved ✓', portfolioDeleted:'Portfolio deleted. Trades moved to Default.',
+    portfolioDeleteConfirm:'Delete this portfolio? All trades will be moved to Default automatically.',
+    portfolioNameRequired:'Portfolio name is required', defaultPortfolio:'Default',
+    targetOptional:'(optional)', portfolioProgress:'Progress', portfolio:'Portfolio',
+    editPortfolio:'Edit Portfolio', createPortfolio:'Create Portfolio',
   }
 };
 function t(key) { return T[lang][key] || key; }
@@ -346,9 +160,14 @@ function t(key) { return T[lang][key] || key; }
 // ═══════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════
-let state = { trades: [], journals: [], playbooks: [], settings: { startBalance: 10000 } };
+let state = {
+  trades: [], journals: [], playbooks: [], settings: { startBalance: 10000 },
+  portfolios: []
+};
 let currentUser = null;
 let editingTradeId = null;
+let editingPortfolioId = null;
+let currentPortfolioId = 'all';
 let charts = {};
 let sortState = { col: 'date', asc: false };
 let calYear = new Date().getFullYear();
@@ -356,6 +175,30 @@ let calMonth = new Date().getMonth();
 let eqMode = 'balance';
 let hmMode = 'pnl';
 let authMode = 'login';
+
+const PORTFOLIO_COLORS = [
+  '#2f81f7','#3fb950','#f85149','#d29922','#a371f7','#39d353',
+  '#ff7b72','#79c0ff','#ffa657','#e3b341'
+];
+
+function getDefaultPortfolio() {
+  return state.portfolios.find(p => p.isDefault) || state.portfolios[0];
+}
+function getCurrentPortfolio() {
+  if (currentPortfolioId === 'all') return null;
+  return state.portfolios.find(p => p.id === currentPortfolioId);
+}
+function getActiveTrades() {
+  if (currentPortfolioId === 'all') return state.trades;
+  return state.trades.filter(t => t.portfolioId === currentPortfolioId);
+}
+function getPortfolioStartBalance() {
+  if (currentPortfolioId === 'all') {
+    return state.portfolios.reduce((s, p) => s + (p.balance || 0), 0) || state.settings.startBalance;
+  }
+  const p = getCurrentPortfolio();
+  return p ? (p.balance || 0) : state.settings.startBalance;
+}
 
 // ═══════════════════════════════════════════════
 // FIRESTORE HELPERS
@@ -370,8 +213,23 @@ async function loadFromFirestore() {
     state.journals = jSnap.docs.map(d => ({ id: d.id, ...d.data() }));
     const pSnap = await getDocs(collection(db, 'users', uid, 'playbooks'));
     state.playbooks = pSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const pfSnap = await getDocs(collection(db, 'users', uid, 'portfolios'));
+    state.portfolios = pfSnap.docs.map(d => ({ id: d.id, ...d.data() }));
     const sSnap = await getDoc(doc(db, 'users', uid, 'settings', 'main'));
     if (sSnap.exists()) state.settings = sSnap.data();
+
+    if (state.portfolios.length === 0) {
+      const defPf = { id: 'default', name: t('defaultPortfolio'), balance: state.settings.startBalance || 10000, color: '#2f81f7', isDefault: true, desc: '', broker: '', currency: 'USD', target: null };
+      state.portfolios.push(defPf);
+      await savePortfolioFS(defPf);
+    }
+    for (const tr of state.trades) {
+      if (!tr.portfolioId) {
+        const defPf = getDefaultPortfolio();
+        tr.portfolioId = defPf ? defPf.id : 'default';
+        await saveTrade(tr);
+      }
+    }
   } catch(e) { console.error('Load error:', e); }
 }
 
@@ -391,6 +249,10 @@ async function saveSettings() {
   if (!currentUser) return;
   await setDoc(doc(db, 'users', currentUser.uid, 'settings', 'main'), state.settings);
 }
+async function savePortfolioFS(pf) {
+  if (!currentUser) return;
+  await setDoc(doc(db, 'users', currentUser.uid, 'portfolios', pf.id), pf);
+}
 async function deleteTradeFS(id) {
   if (!currentUser) return;
   await deleteDoc(doc(db, 'users', currentUser.uid, 'trades', id));
@@ -403,6 +265,10 @@ async function deletePlaybookFS(id) {
   if (!currentUser) return;
   await deleteDoc(doc(db, 'users', currentUser.uid, 'playbooks', id));
 }
+async function deletePortfolioFS(id) {
+  if (!currentUser) return;
+  await deleteDoc(doc(db, 'users', currentUser.uid, 'portfolios', id));
+}
 async function clearAllFS() {
   if (!currentUser) return;
   const uid = currentUser.uid;
@@ -411,12 +277,9 @@ async function clearAllFS() {
   for (const p of state.playbooks) await deleteDoc(doc(db, 'users', uid, 'playbooks', p.id));
 }
 
-// ═══════════════════════════════════════════════
-// UTILS
-// ═══════════════════════════════════════════════
 const $ = id => document.getElementById(id);
 const fmt = (n, d=2) => n >= 0 ? `+$${n.toFixed(d)}` : `-$${Math.abs(n).toFixed(d)}`;
-const fmtN = (n, d=2) => `$${n.toFixed(d)}`;
+const fmtN = (n, d=2) => `$${Number(n).toFixed(d)}`;
 const pct = n => `${n >= 0 ? '+' : ''}${n.toFixed(1)}%`;
 function uid2() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
 function showToast(msg, color='') {
@@ -429,7 +292,8 @@ function destroyChart(key) { if (charts[key]) { charts[key].destroy(); delete ch
 // ═══════════════════════════════════════════════
 // STATS
 // ═══════════════════════════════════════════════
-function calcStats(trades) {
+function calcStats(trades, startBalance) {
+  const sb = startBalance !== undefined ? startBalance : getPortfolioStartBalance();
   if (!trades.length) return { total:0, wins:0, losses:0, be:0, wr:0, netPnl:0, avgWin:0, avgLoss:0, pf:0, avgR:0, maxWin:0, maxLoss:0, maxDD:0, sharpe:0, expectancy:0 };
   const wins = trades.filter(t => t.result === 'Win');
   const losses = trades.filter(t => t.result === 'Loss');
@@ -442,7 +306,7 @@ function calcStats(trades) {
   const avgR = trades.filter(t=>t.rr).reduce((s,t)=>s+(t.rr||0),0) / (trades.filter(t=>t.rr).length||1);
   const maxWin = wins.length ? Math.max(...wins.map(t=>t.pnl)) : 0;
   const maxLoss = losses.length ? Math.abs(Math.min(...losses.map(t=>t.pnl))) : 0;
-  let peak = state.settings.startBalance, bal = peak, maxDD = 0;
+  let peak = sb, bal = peak, maxDD = 0;
   for (const t of [...trades].sort((a,b)=>new Date(a.date)-new Date(b.date))) {
     bal += (t.pnl||0);
     if (bal > peak) peak = bal;
@@ -461,6 +325,211 @@ function calcStats(trades) {
 }
 
 // ═══════════════════════════════════════════════
+// PORTFOLIO DROPDOWN
+// ═══════════════════════════════════════════════
+function renderPortfolioDropdown() {
+  const wrap = $('portfolio-dropdown-wrap');
+  if (!wrap) return;
+
+  const current = currentPortfolioId === 'all'
+    ? { name: t('allPortfolios'), color: '#8b949e' }
+    : (state.portfolios.find(p => p.id === currentPortfolioId) || state.portfolios[0]);
+
+  const color = current ? current.color : '#8b949e';
+  const name = current ? current.name : t('allPortfolios');
+
+  wrap.innerHTML = `
+    <div class="pf-dropdown" id="pf-dropdown-btn">
+      <div class="pf-dot" style="background:${color}"></div>
+      <span class="pf-name">${name}</span>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+    </div>
+    <div class="pf-dropdown-menu hidden" id="pf-dropdown-menu">
+      <div class="pf-menu-item ${currentPortfolioId==='all'?'active':''}" data-pfid="all">
+        <div class="pf-dot" style="background:#8b949e"></div>
+        <span>${t('allPortfolios')}</span>
+        ${currentPortfolioId==='all'?'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>':''}
+      </div>
+      ${state.portfolios.map(p=>`
+        <div class="pf-menu-item ${currentPortfolioId===p.id?'active':''}" data-pfid="${p.id}">
+          <div class="pf-dot" style="background:${p.color||'#2f81f7'}"></div>
+          <span>${p.name}</span>
+          ${currentPortfolioId===p.id?'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>':''}
+        </div>
+      `).join('')}
+      <div class="pf-menu-divider"></div>
+      <div class="pf-menu-item pf-menu-manage" id="pf-manage-btn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        <span>${t('managePortfolios')}</span>
+      </div>
+    </div>
+  `;
+
+  $('pf-dropdown-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    $('pf-dropdown-menu').classList.toggle('hidden');
+  });
+  $('pf-dropdown-menu').querySelectorAll('.pf-menu-item[data-pfid]').forEach(el => {
+    el.addEventListener('click', () => {
+      currentPortfolioId = el.dataset.pfid;
+      $('pf-dropdown-menu').classList.add('hidden');
+      renderPortfolioDropdown();
+      const activeView = document.querySelector('.view.active');
+      if (activeView) setView(activeView.id.replace('view-',''));
+    });
+  });
+  const manageBtn = $('pf-manage-btn');
+  if (manageBtn) manageBtn.addEventListener('click', () => {
+    $('pf-dropdown-menu').classList.add('hidden');
+    openPortfolioManager();
+  });
+}
+
+document.addEventListener('click', () => {
+  const menu = $('pf-dropdown-menu');
+  if (menu) menu.classList.add('hidden');
+});
+
+// ═══════════════════════════════════════════════
+// PORTFOLIO MANAGER MODAL
+// ═══════════════════════════════════════════════
+function openPortfolioManager() {
+  renderPortfolioList();
+  $('pf-modal').classList.remove('hidden');
+}
+function closePortfolioManager() {
+  $('pf-modal').classList.add('hidden');
+  $('pf-form-wrap').classList.add('hidden');
+  editingPortfolioId = null;
+}
+function renderPortfolioList() {
+  const list = $('pf-list');
+  if (!list) return;
+  list.innerHTML = state.portfolios.map(p => {
+    const pfTrades = state.trades.filter(tr => tr.portfolioId === p.id);
+    const pfStats = calcStats(pfTrades, p.balance || 0);
+    const progress = p.target && p.balance ? Math.min(100, ((p.balance + pfStats.netPnl) / p.target) * 100) : null;
+    return `
+    <div class="pf-list-item">
+      <div class="pf-list-left">
+        <div class="pf-list-dot" style="background:${p.color||'#2f81f7'}"></div>
+        <div>
+          <div class="pf-list-name">${p.name}${p.isDefault?'<span class="pf-default-tag">Default</span>':''}</div>
+          <div class="pf-list-meta">
+            ${p.broker?`<span>${p.broker}</span><span class="pf-meta-sep">·</span>`:''}
+            <span>${p.currency||'USD'}</span>
+            <span class="pf-meta-sep">·</span>
+            <span>${fmtN(p.balance||0,0)} ${t('startBalance').replace('ยอดเงิน','')}</span>
+            <span class="pf-meta-sep">·</span>
+            <span>${pfTrades.length} ${t('trades')}</span>
+          </div>
+          ${p.desc?`<div class="pf-list-desc">${p.desc}</div>`:''}
+          ${progress !== null ? `
+            <div class="pf-progress-wrap">
+              <div class="pf-progress-bar"><div class="pf-progress-fill" style="width:${progress.toFixed(0)}%;background:${p.color||'#2f81f7'}"></div></div>
+              <span class="pf-progress-label">${progress.toFixed(0)}% → ${fmtN(p.target,0)}</span>
+            </div>
+          ` : ''}
+        </div>
+      </div>
+      <div class="pf-list-right">
+        <div class="pf-list-pnl ${pfStats.netPnl>=0?'c-win':'c-loss'}">${fmt(pfStats.netPnl)}</div>
+        <div class="pf-list-wr">${pfTrades.length?pfStats.wr.toFixed(0)+'% WR':'—'}</div>
+        <div style="display:flex;gap:6px;margin-top:8px">
+          <button class="action-btn" onclick="editPortfolioItem('${p.id}')">✏</button>
+          ${!p.isDefault?`<button class="action-btn danger" onclick="deletePortfolioItem('${p.id}')">🗑</button>`:''}
+        </div>
+      </div>
+    </div>`;
+  }).join('') || `<div style="text-align:center;color:var(--text3);padding:24px">ยังไม่มีพอร์ต</div>`;
+}
+
+function openPortfolioForm(portfolioId) {
+  editingPortfolioId = portfolioId || null;
+  $('pf-form-title').textContent = portfolioId ? t('editPortfolio') : t('createPortfolio');
+  $('pf-form-wrap').classList.remove('hidden');
+
+  if (portfolioId) {
+    const p = state.portfolios.find(x => x.id === portfolioId);
+    if (!p) return;
+    $('pf-fname').value = p.name || '';
+    $('pf-fdesc').value = p.desc || '';
+    $('pf-fbalance').value = p.balance || '';
+    $('pf-ftarget').value = p.target || '';
+    $('pf-fbroker').value = p.broker || '';
+    $('pf-fcurrency').value = p.currency || 'USD';
+    selectedColor = p.color || PORTFOLIO_COLORS[0];
+  } else {
+    ['pf-fname','pf-fdesc','pf-fbalance','pf-ftarget','pf-fbroker'].forEach(id => $(id).value = '');
+    $('pf-fcurrency').value = 'USD';
+    selectedColor = PORTFOLIO_COLORS[state.portfolios.length % PORTFOLIO_COLORS.length];
+  }
+  renderColorPicker();
+}
+
+let selectedColor = PORTFOLIO_COLORS[0];
+function renderColorPicker() {
+  const wrap = $('pf-color-picker');
+  if (!wrap) return;
+  wrap.innerHTML = PORTFOLIO_COLORS.map(c =>
+    `<div class="color-dot ${c===selectedColor?'selected':''}" style="background:${c}" data-color="${c}"></div>`
+  ).join('');
+  wrap.querySelectorAll('.color-dot').forEach(el => {
+    el.addEventListener('click', () => {
+      selectedColor = el.dataset.color;
+      renderColorPicker();
+    });
+  });
+}
+
+async function savePortfolioHandler() {
+  const name = $('pf-fname').value.trim();
+  if (!name) { showToast(t('portfolioNameRequired'), 'var(--loss)'); return; }
+  const pf = {
+    id: editingPortfolioId || uid2(),
+    name,
+    desc: $('pf-fdesc').value.trim(),
+    balance: $('pf-fbalance').value ? +$('pf-fbalance').value : 0,
+    target: $('pf-ftarget').value ? +$('pf-ftarget').value : null,
+    broker: $('pf-fbroker').value.trim(),
+    currency: $('pf-fcurrency').value,
+    color: selectedColor,
+    isDefault: editingPortfolioId ? (state.portfolios.find(p=>p.id===editingPortfolioId)?.isDefault||false) : (state.portfolios.length===0),
+  };
+  if (editingPortfolioId) {
+    const idx = state.portfolios.findIndex(x => x.id === editingPortfolioId);
+    if (idx >= 0) state.portfolios[idx] = pf;
+  } else {
+    state.portfolios.push(pf);
+  }
+  await savePortfolioFS(pf);
+  $('pf-form-wrap').classList.add('hidden');
+  editingPortfolioId = null;
+  renderPortfolioList();
+  renderPortfolioDropdown();
+  showToast(t('portfolioSaved'), 'var(--win)');
+}
+
+window.editPortfolioItem = function(id) { openPortfolioForm(id); };
+window.deletePortfolioItem = async function(id) {
+  if (!confirm(t('portfolioDeleteConfirm'))) return;
+  const defPf = getDefaultPortfolio();
+  const defId = defPf && defPf.id !== id ? defPf.id : (state.portfolios.find(p => p.id !== id)?.id || 'default');
+  for (const tr of state.trades) {
+    if (tr.portfolioId === id) {
+      tr.portfolioId = defId;
+      await saveTrade(tr);
+    }
+  }
+  state.portfolios = state.portfolios.filter(p => p.id !== id);
+  await deletePortfolioFS(id);
+  if (currentPortfolioId === id) currentPortfolioId = 'all';
+  renderPortfolioList();
+  renderPortfolioDropdown();
+  showToast(t('portfolioDeleted'));
+};
+
+// ═══════════════════════════════════════════════
 // AUTH UI
 // ═══════════════════════════════════════════════
 function showAuth() {
@@ -471,9 +540,7 @@ function showAuth() {
 function showApp() {
   $('auth-screen').style.display = 'none';
   $('app-screen').style.display = 'flex';
-  if (currentUser) {
-    $('user-email').textContent = currentUser.displayName || currentUser.email;
-  }
+  if (currentUser) $('user-email').textContent = currentUser.displayName || currentUser.email;
 }
 function renderAuthForm() {
   const isLogin = authMode === 'login';
@@ -484,30 +551,22 @@ function renderAuthForm() {
 }
 
 // ═══════════════════════════════════════════════
-// IMAGE UPLOAD (base64)
+// IMAGE UPLOAD
 // ═══════════════════════════════════════════════
 let tradeImages = [];
-function initImageUpload() {
-  tradeImages = [];
-  renderImagePreview();
-}
+function initImageUpload() { tradeImages = []; renderImagePreview(); }
 function renderImagePreview() {
   const wrap = $('image-preview-wrap');
   if (!wrap) return;
   wrap.innerHTML = '';
   tradeImages.forEach((img, idx) => {
-    const div = document.createElement('div');
-    div.className = 'img-preview-item';
+    const div = document.createElement('div'); div.className = 'img-preview-item';
     div.innerHTML = `<img src="${img}" alt="trade img"/><button class="img-del-btn" onclick="removeImage(${idx})">✕</button>`;
     wrap.appendChild(div);
   });
-  const canAdd = tradeImages.length < 4;
-  $('img-upload-btn').style.display = canAdd ? '' : 'none';
+  $('img-upload-btn').style.display = tradeImages.length < 4 ? '' : 'none';
 }
-window.removeImage = function(idx) {
-  tradeImages.splice(idx, 1);
-  renderImagePreview();
-};
+window.removeImage = function(idx) { tradeImages.splice(idx, 1); renderImagePreview(); };
 function handleImageUpload(files) {
   const remaining = 4 - tradeImages.length;
   const toLoad = Array.from(files).slice(0, remaining);
@@ -518,14 +577,12 @@ function handleImageUpload(files) {
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const MAX = 800;
-        let w = img.width, h = img.height;
+        const MAX = 800; let w = img.width, h = img.height;
         if (w > MAX) { h = h * MAX / w; w = MAX; }
         if (h > MAX) { w = w * MAX / h; h = MAX; }
         canvas.width = w; canvas.height = h;
         canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-        const compressed = canvas.toDataURL('image/jpeg', 0.7);
-        tradeImages.push(compressed);
+        tradeImages.push(canvas.toDataURL('image/jpeg', 0.7));
         loaded++;
         if (loaded === toLoad.length) renderImagePreview();
       };
@@ -556,11 +613,9 @@ function setView(id) {
   if (id === 'risk') renderRisk();
   if (window.innerWidth <= 768) $('sidebar').classList.remove('open');
 }
-
 function updateAllLabels() {
   document.querySelectorAll('[data-label]').forEach(el => {
-    const key = el.getAttribute('data-label');
-    el.textContent = t(key);
+    el.textContent = t(el.getAttribute('data-label'));
   });
 }
 
@@ -568,26 +623,72 @@ function updateAllLabels() {
 // DASHBOARD
 // ═══════════════════════════════════════════════
 function renderDashboard() {
-  const s = calcStats(state.trades);
+  const trades = getActiveTrades();
+  const sb = getPortfolioStartBalance();
+  const s = calcStats(trades, sb);
+  const cp = getCurrentPortfolio();
+
+  const pfProgress = $('dash-pf-progress');
+  if (pfProgress) {
+    if (cp && cp.target && cp.balance) {
+      const curBal = cp.balance + s.netPnl;
+      const pct2 = Math.min(100, (curBal / cp.target) * 100);
+      pfProgress.innerHTML = `
+        <div class="pf-progress-header">
+          <span style="font-size:12px;color:var(--text2)">${t('portfolioProgress')}: ${fmtN(curBal,0)} / ${fmtN(cp.target,0)}</span>
+          <span style="font-size:12px;font-weight:600;color:${cp.color||'var(--accent)'}">${pct2.toFixed(1)}%</span>
+        </div>
+        <div class="pf-progress-bar" style="height:8px;margin-top:6px">
+          <div class="pf-progress-fill" style="width:${pct2.toFixed(0)}%;background:${cp.color||'var(--accent)'}"></div>
+        </div>`;
+      pfProgress.style.display = '';
+    } else {
+      pfProgress.style.display = 'none';
+    }
+  }
+
   const kpis = [
-    { label: t('netPnl'), val: fmt(s.netPnl), cls: s.netPnl>=0?'c-win':'c-loss', sub: pct(s.netPnl/state.settings.startBalance*100) },
+    { label: t('netPnl'), val: fmt(s.netPnl), cls: s.netPnl>=0?'c-win':'c-loss', sub: pct(s.netPnl/sb*100) },
     { label: t('winRate'), val: s.total ? s.wr.toFixed(1)+'%' : '—', cls:'c-acc', sub:`${s.wins}W ${s.losses}L ${s.be}BE` },
     { label: t('profitFactor'), val: s.pf === Infinity ? '∞' : s.pf.toFixed(2), cls:'', sub:'' },
     { label: t('avgWin'), val: s.wins ? fmtN(s.avgWin) : '—', cls:'c-win', sub:'' },
     { label: t('avgLoss'), val: s.losses ? fmtN(s.avgLoss) : '—', cls:'c-loss', sub:'' },
     { label: t('maxDD'), val: s.maxDD.toFixed(1)+'%', cls: s.maxDD>10?'c-loss':'', sub:'' },
-    { label: t('balance'), val: fmtN(state.settings.startBalance + s.netPnl), cls:'c-acc', sub:`${t('startBalance')}: ${fmtN(state.settings.startBalance)}` },
+    { label: t('balance'), val: fmtN(sb + s.netPnl), cls:'c-acc', sub:`${t('startBalance')}: ${fmtN(sb)}` },
     { label: t('totalTrades'), val: s.total, cls:'', sub:`${t('expectancy')}: ${s.expectancy.toFixed(2)}` },
   ];
   $('dash-kpi').innerHTML = kpis.map(k=>`<div class="kpi"><div class="kpi-label">${k.label}</div><div class="kpi-val ${k.cls}">${k.val}</div><div class="kpi-sub">${k.sub}</div></div>`).join('');
-  const sorted = [...state.trades].sort((a,b) => new Date(a.date)-new Date(b.date));
+
+  const pfSummary = $('dash-pf-summary');
+  if (pfSummary) {
+    if (currentPortfolioId === 'all' && state.portfolios.length > 1) {
+      pfSummary.innerHTML = `<div class="card-title" style="margin-bottom:12px;font-size:13px;color:var(--text2)">${t('allPortfolios')}</div>` +
+        `<div style="display:flex;gap:10px;flex-wrap:wrap">` +
+        state.portfolios.map(p => {
+          const pt = state.trades.filter(tr => tr.portfolioId === p.id);
+          const ps = calcStats(pt, p.balance || 0);
+          return `<div class="pf-summary-chip" style="border-color:${p.color||'#2f81f7'}">
+            <div class="pf-dot" style="background:${p.color||'#2f81f7'}"></div>
+            <span style="font-weight:600">${p.name}</span>
+            <span class="${ps.netPnl>=0?'c-win':'c-loss'}" style="font-family:var(--mono);font-size:12px">${fmt(ps.netPnl)}</span>
+            <span style="color:var(--text3);font-size:11px">${pt.length} ${t('trades')}</span>
+          </div>`;
+        }).join('') + `</div>`;
+      pfSummary.style.display = '';
+    } else {
+      pfSummary.style.display = 'none';
+    }
+  }
+
+  const sorted = [...trades].sort((a,b) => new Date(a.date)-new Date(b.date));
   destroyChart('equity');
   const ctx = $('equityChart').getContext('2d');
-  let running = eqMode === 'balance' ? state.settings.startBalance : 0;
+  let running = eqMode === 'balance' ? sb : 0;
   const labels = [], vals = [];
   for (const t2 of sorted) { running += (t2.pnl||0); labels.push(t2.date); vals.push(+running.toFixed(2)); }
+  const lineColor = cp ? (cp.color || '#2f81f7') : '#2f81f7';
   charts.equity = new Chart(ctx, {
-    type:'line', data:{ labels, datasets:[{ data:vals, borderColor:'#2f81f7', borderWidth:2, fill:true, backgroundColor:'rgba(47,129,247,.08)', tension:.35, pointRadius:sorted.length>80?0:3, pointBackgroundColor:'#2f81f7' }] },
+    type:'line', data:{ labels, datasets:[{ data:vals, borderColor:lineColor, borderWidth:2, fill:true, backgroundColor:lineColor+'15', tension:.35, pointRadius:sorted.length>80?0:3, pointBackgroundColor:lineColor }] },
     options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} }, scales:{ x:{display:true,ticks:{maxTicksLimit:8,color:'#8b949e',font:{size:10}}}, y:{ticks:{color:'#8b949e',font:{size:10},callback:v=>'$'+v.toFixed(0)}} } }
   });
   destroyChart('wl');
@@ -596,25 +697,25 @@ function renderDashboard() {
     options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{position:'bottom',labels:{color:'#8b949e',font:{size:11},padding:12}} } }
   });
   const strats = {};
-  for (const t2 of state.trades) { if (t2.strategy) { strats[t2.strategy] = (strats[t2.strategy]||0) + (t2.pnl||0); } }
+  for (const t2 of trades) { if (t2.strategy) { strats[t2.strategy] = (strats[t2.strategy]||0) + (t2.pnl||0); } }
   const stratLabels = Object.keys(strats), stratVals = Object.values(strats);
   destroyChart('strat');
   charts.strat = new Chart($('stratChart').getContext('2d'), {
     type:'bar', data:{ labels:stratLabels, datasets:[{ data:stratVals, backgroundColor: stratVals.map(v=>v>=0?'rgba(63,185,80,.7)':'rgba(248,81,73,.7)'), borderRadius:4 }] },
     options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} }, scales:{ x:{ticks:{color:'#8b949e',font:{size:10}}}, y:{ticks:{color:'#8b949e',font:{size:10},callback:v=>'$'+v.toFixed(0)}} } }
   });
-  let curWin=0, maxWin=0, curLoss=0, maxLoss=0;
+  let curWin=0, maxWin2=0, curLoss=0, maxLoss2=0;
   for (const t2 of sorted) {
-    if (t2.result==='Win'){curWin++;maxWin=Math.max(maxWin,curWin);curLoss=0;}
-    else if(t2.result==='Loss'){curLoss++;maxLoss=Math.max(maxLoss,curLoss);curWin=0;}
+    if (t2.result==='Win'){curWin++;maxWin2=Math.max(maxWin2,curWin);curLoss=0;}
+    else if(t2.result==='Loss'){curLoss++;maxLoss2=Math.max(maxLoss2,curLoss);curWin=0;}
     else{curWin=0;curLoss=0;}
   }
   $('dash-streak').innerHTML = `
     <div class="streak-card"><div class="streak-num c-win">${curWin}</div><div class="streak-label">${t('currentWinStreak')}</div></div>
-    <div class="streak-card"><div class="streak-num c-win">${maxWin}</div><div class="streak-label">${t('bestWinStreak')}</div></div>
+    <div class="streak-card"><div class="streak-num c-win">${maxWin2}</div><div class="streak-label">${t('bestWinStreak')}</div></div>
     <div class="streak-card"><div class="streak-num c-loss">${curLoss}</div><div class="streak-label">${t('currentLossStreak')}</div></div>
-    <div class="streak-card"><div class="streak-num c-loss">${maxLoss}</div><div class="streak-label">${t('worstLossStreak')}</div></div>`;
-  const recent = [...state.trades].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,8);
+    <div class="streak-card"><div class="streak-num c-loss">${maxLoss2}</div><div class="streak-label">${t('worstLossStreak')}</div></div>`;
+  const recent = [...trades].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,8);
   $('recent-trades-body').innerHTML = recent.length ?
     `<table class="trade-table"><thead><tr><th>${t('date')}</th><th>${t('symbol')}</th><th>${t('direction')}</th><th>${t('pnl')}</th><th>${t('result')}</th></tr></thead><tbody>${recent.map(tr=>`<tr><td>${tr.date}</td><td><b>${tr.symbol}</b></td><td><span class="badge badge-${tr.direction==='Long'?'long':'short'}">${tr.direction==='Long'?t('long'):t('short')}</span></td><td class="mono ${(tr.pnl||0)>=0?'c-win':'c-loss'}">${fmt(tr.pnl||0)}</td><td><span class="badge badge-${tr.result.toLowerCase()}">${tr.result==='Win'?t('win'):tr.result==='Loss'?t('loss'):t('breakeven')}</span></td></tr>`).join('')}</tbody></table>`
     : `<div class="empty"><div class="empty-icon">📭</div><h3>${t('noTrades')}</h3><p>${t('noTradesDesc')}</p></div>`;
@@ -624,6 +725,7 @@ function renderDashboard() {
 // CALENDAR
 // ═══════════════════════════════════════════════
 function renderCalendar() {
+  const trades = getActiveTrades();
   const title = new Date(calYear, calMonth).toLocaleDateString(lang==='th'?'th-TH':'en-US', { month:'long', year:'numeric' });
   $('cal-title').textContent = title;
   const firstDay = new Date(calYear, calMonth, 1).getDay();
@@ -631,7 +733,7 @@ function renderCalendar() {
   const daysInPrev = new Date(calYear, calMonth, 0).getDate();
   const today = new Date().toISOString().slice(0,10);
   const dayMap = {};
-  for (const tr of state.trades) {
+  for (const tr of trades) {
     if (!dayMap[tr.date]) dayMap[tr.date] = { pnl:0, count:0 };
     dayMap[tr.date].pnl += (tr.pnl||0); dayMap[tr.date].count++;
   }
@@ -650,15 +752,15 @@ function renderCalendar() {
   }
   $('cal-grid').innerHTML = html;
   $('cal-grid').querySelectorAll('.cal-day[data-date]').forEach(el => {
-    el.addEventListener('click', () => showCalDetail(el.dataset.date));
+    el.addEventListener('click', () => showCalDetail(el.dataset.date, trades));
   });
 }
-function showCalDetail(date) {
-  const trades = state.trades.filter(tr => tr.date === date);
+function showCalDetail(date, trades) {
+  const dayTrades = (trades || getActiveTrades()).filter(tr => tr.date === date);
   $('cal-detail').style.display = 'block';
   $('cal-detail-title').textContent = new Date(date+'T00:00:00').toLocaleDateString(lang==='th'?'th-TH':'en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
-  $('cal-detail-body').innerHTML = trades.length ?
-    `<table class="trade-table"><thead><tr><th>${t('symbol')}</th><th>${t('direction')}</th><th>${t('entryPrice')}</th><th>${t('exitPrice')}</th><th>${t('pnl')}</th><th>${t('result')}</th></tr></thead><tbody>${trades.map(tr=>`<tr><td><b>${tr.symbol}</b></td><td><span class="badge badge-${tr.direction==='Long'?'long':'short'}">${tr.direction==='Long'?t('long'):t('short')}</span></td><td class="mono">${tr.entry||'—'}</td><td class="mono">${tr.exit||'—'}</td><td class="mono ${(tr.pnl||0)>=0?'c-win':'c-loss'}">${fmt(tr.pnl||0)}</td><td><span class="badge badge-${tr.result.toLowerCase()}">${tr.result==='Win'?t('win'):tr.result==='Loss'?t('loss'):t('breakeven')}</span></td></tr>`).join('')}</tbody></table>`
+  $('cal-detail-body').innerHTML = dayTrades.length ?
+    `<table class="trade-table"><thead><tr><th>${t('symbol')}</th><th>${t('direction')}</th><th>${t('entryPrice')}</th><th>${t('exitPrice')}</th><th>${t('pnl')}</th><th>${t('result')}</th></tr></thead><tbody>${dayTrades.map(tr=>`<tr><td><b>${tr.symbol}</b></td><td><span class="badge badge-${tr.direction==='Long'?'long':'short'}">${tr.direction==='Long'?t('long'):t('short')}</span></td><td class="mono">${tr.entry||'—'}</td><td class="mono">${tr.exit||'—'}</td><td class="mono ${(tr.pnl||0)>=0?'c-win':'c-loss'}">${fmt(tr.pnl||0)}</td><td><span class="badge badge-${tr.result.toLowerCase()}">${tr.result==='Win'?t('win'):tr.result==='Loss'?t('loss'):t('breakeven')}</span></td></tr>`).join('')}</tbody></table>`
     : `<div class="empty" style="padding:24px"><p>${t('noTradesDay')}</p></div>`;
 }
 
@@ -672,7 +774,7 @@ function getFiltered() {
   const market = $('f-market').value;
   const from = $('f-from').value;
   const to = $('f-to').value;
-  return state.trades.filter(tr => {
+  return getActiveTrades().filter(tr => {
     if (search && !tr.symbol.toLowerCase().includes(search) && !(tr.notes||'').toLowerCase().includes(search) && !(tr.strategy||'').toLowerCase().includes(search) && !(tr.tags||'').toLowerCase().includes(search)) return false;
     if (result && tr.result !== result) return false;
     if (dir && tr.direction !== dir) return false;
@@ -696,35 +798,42 @@ function renderTrades() {
   $('nav-trade-count').textContent = state.trades.length;
   if (!trades.length) { $('trades-body').innerHTML = ''; $('trades-empty').style.display = ''; return; }
   $('trades-empty').style.display = 'none';
-  $('trades-body').innerHTML = trades.map(tr => `<tr>
-    <td>${tr.date}</td><td><b>${tr.symbol}</b></td>
-    <td style="color:var(--text2)">${tr.market||'—'}</td>
-    <td><span class="badge badge-${tr.direction==='Long'?'long':'short'}">${tr.direction==='Long'?t('long'):t('short')}</span></td>
-    <td class="mono">${tr.entry||'—'}</td><td class="mono">${tr.exit||'—'}</td><td class="mono">${tr.qty||'—'}</td>
-    <td class="mono">${tr.rr!=null?'1:'+tr.rr:'—'}</td>
-    <td class="mono ${(tr.pnl||0)>=0?'c-win':'c-loss'}">${fmt(tr.pnl||0)}</td>
-    <td class="mono c-loss">${tr.risk!=null?'-$'+Number(tr.risk).toFixed(2):'—'}</td>
-    <td><span class="badge badge-${tr.result.toLowerCase()}">${tr.result==='Win'?t('win'):tr.result==='Loss'?t('loss'):t('breakeven')}</span></td>
-    <td style="color:var(--text2);font-size:12px">${tr.strategy||'—'}</td>
-    <td>
-      <button class="action-btn" onclick="editTrade('${tr.id}')">${t('edit')}</button>
-      <button class="action-btn danger" onclick="deleteTrade('${tr.id}')">${t('delete')}</button>
-    </td>
-  </tr>`).join('');
+  $('trades-body').innerHTML = trades.map(tr => {
+    const pf = state.portfolios.find(p => p.id === tr.portfolioId);
+    return `<tr>
+      <td>${tr.date}</td><td><b>${tr.symbol}</b></td>
+      <td style="color:var(--text2)">${tr.market||'—'}</td>
+      <td><span class="badge badge-${tr.direction==='Long'?'long':'short'}">${tr.direction==='Long'?t('long'):t('short')}</span></td>
+      <td class="mono">${tr.entry||'—'}</td><td class="mono">${tr.exit||'—'}</td><td class="mono">${tr.qty||'—'}</td>
+      <td class="mono">${tr.rr!=null?'1:'+tr.rr:'—'}</td>
+      <td class="mono ${(tr.pnl||0)>=0?'c-win':'c-loss'}">${fmt(tr.pnl||0)}</td>
+      <td class="mono c-loss">${tr.risk!=null?'-$'+Number(tr.risk).toFixed(2):'—'}</td>
+      <td><span class="badge badge-${tr.result.toLowerCase()}">${tr.result==='Win'?t('win'):tr.result==='Loss'?t('loss'):t('breakeven')}</span></td>
+      <td style="color:var(--text2);font-size:12px">${tr.strategy||'—'}</td>
+      ${currentPortfolioId==='all'?`<td><span class="pf-chip" style="border-color:${pf?.color||'#8b949e'};color:${pf?.color||'#8b949e'}">${pf?.name||'—'}</span></td>`:''}
+      <td>
+        <button class="action-btn" onclick="editTrade('${tr.id}')">${t('edit')}</button>
+        <button class="action-btn danger" onclick="deleteTrade('${tr.id}')">${t('delete')}</button>
+      </td>
+    </tr>`;
+  }).join('');
+  const pfTh = $('th-portfolio');
+  if (pfTh) pfTh.style.display = currentPortfolioId === 'all' ? '' : 'none';
 }
 
 // ═══════════════════════════════════════════════
 // ANALYTICS
 // ═══════════════════════════════════════════════
 function renderAnalytics() {
-  const s = calcStats(state.trades);
+  const trades = getActiveTrades();
+  const s = calcStats(trades, getPortfolioStartBalance());
   $('analytics-kpi').innerHTML = [
     { label:t('sharpe'), val:s.sharpe, cls:'', sub:'' },
     { label:t('expectancy'), val: s.expectancy>=0?'+$'+s.expectancy.toFixed(2):'-$'+Math.abs(s.expectancy).toFixed(2), cls:s.expectancy>=0?'c-win':'c-loss', sub:'' },
     { label:t('avgR'), val:s.avgR.toFixed(2)+'R', cls:s.avgR>=0?'c-acc':'c-loss', sub:'' },
     { label:t('maxDD'), val:s.maxDD.toFixed(1)+'%', cls:s.maxDD>10?'c-loss':'', sub:'' },
   ].map(k=>`<div class="kpi"><div class="kpi-label">${k.label}</div><div class="kpi-val ${k.cls}">${k.val}</div><div class="kpi-sub">${k.sub}</div></div>`).join('');
-  const pnls = state.trades.map(t2=>t2.pnl||0).sort((a,b)=>a-b);
+  const pnls = trades.map(t2=>t2.pnl||0).sort((a,b)=>a-b);
   const min = pnls.length ? Math.floor(pnls[0]/50)*50 : -500;
   const max = pnls.length ? Math.ceil(pnls[pnls.length-1]/50)*50 : 500;
   const buckets = {}, step = Math.max(10, Math.ceil((max-min)/20/10)*10);
@@ -735,8 +844,9 @@ function renderAnalytics() {
     type:'bar', data:{ labels:Object.keys(buckets).map(v=>`$${v}`), datasets:[{ data:Object.values(buckets), backgroundColor:Object.keys(buckets).map(v=>+v>=0?'rgba(63,185,80,.7)':'rgba(248,81,73,.7)'), borderRadius:3 }] },
     options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{ticks:{color:'#8b949e',font:{size:9}}},y:{ticks:{color:'#8b949e',font:{size:10}}}} }
   });
-  const sorted = [...state.trades].sort((a,b)=>new Date(a.date)-new Date(b.date));
-  let peak2=state.settings.startBalance, bal2=peak2;
+  const sb = getPortfolioStartBalance();
+  const sorted = [...trades].sort((a,b)=>new Date(a.date)-new Date(b.date));
+  let peak2=sb, bal2=peak2;
   const ddLabels=[], ddVals=[];
   for (const t2 of sorted) { bal2+=(t2.pnl||0); if(bal2>peak2)peak2=bal2; const dd=peak2>0?(peak2-bal2)/peak2*100:0; ddLabels.push(t2.date); ddVals.push(-dd.toFixed(2)); }
   destroyChart('dd');
@@ -745,15 +855,15 @@ function renderAnalytics() {
     options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{ticks:{color:'#8b949e',font:{size:10},maxTicksLimit:6}},y:{ticks:{color:'#8b949e',font:{size:10},callback:v=>v+'%'}}} }
   });
   const dowArr = [t('sun'),t('mon'),t('tue'),t('wed'),t('thu'),t('fri'),t('sat')];
-  const dowPnl=Array(7).fill(0), dowCnt=Array(7).fill(0);
-  for (const t2 of state.trades) { const d=new Date(t2.date+'T00:00:00').getDay(); dowPnl[d]+=(t2.pnl||0); dowCnt[d]++; }
+  const dowPnl=Array(7).fill(0);
+  for (const t2 of trades) { const d=new Date(t2.date+'T00:00:00').getDay(); dowPnl[d]+=(t2.pnl||0); }
   destroyChart('dow');
   charts.dow = new Chart($('dowChart').getContext('2d'), {
     type:'bar', data:{ labels:dowArr, datasets:[{ data:dowPnl.map(v=>+v.toFixed(2)), backgroundColor:dowPnl.map(v=>v>=0?'rgba(63,185,80,.7)':'rgba(248,81,73,.7)'), borderRadius:4 }] },
     options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{ticks:{color:'#8b949e',font:{size:10}}},y:{ticks:{color:'#8b949e',font:{size:10},callback:v=>'$'+v}}} }
   });
   const symMap={};
-  for (const t2 of state.trades) { if(!symMap[t2.symbol])symMap[t2.symbol]={wins:0,total:0}; symMap[t2.symbol].total++; if(t2.result==='Win')symMap[t2.symbol].wins++; }
+  for (const t2 of trades) { if(!symMap[t2.symbol])symMap[t2.symbol]={wins:0,total:0}; symMap[t2.symbol].total++; if(t2.result==='Win')symMap[t2.symbol].wins++; }
   const symL=Object.keys(symMap), symWr=symL.map(s2=>(symMap[s2].wins/symMap[s2].total*100).toFixed(1));
   destroyChart('symbol');
   charts.symbol = new Chart($('symbolChart').getContext('2d'), {
@@ -761,7 +871,7 @@ function renderAnalytics() {
     options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{ticks:{color:'#8b949e',font:{size:10}}},y:{ticks:{color:'#8b949e',font:{size:10},callback:v=>v+'%'},max:100}} }
   });
   $('adv-stats').innerHTML = [
-    [t('winRate'), state.trades.length?s.wr.toFixed(1)+'%':'—',''],
+    [t('winRate'), trades.length?s.wr.toFixed(1)+'%':'—',''],
     [t('profitFactor'), s.pf===Infinity?'∞':s.pf.toFixed(2), s.pf>=1?'c-win':'c-loss'],
     [t('avgWin'), s.wins?fmtN(s.avgWin):'—','c-win'],
     [t('avgLoss'), s.losses?fmtN(s.avgLoss):'—','c-loss'],
@@ -778,10 +888,11 @@ function renderAnalytics() {
 // HEATMAP
 // ═══════════════════════════════════════════════
 function renderHeatmap() {
+  const trades = getActiveTrades();
   const days = [t('sun'),t('mon'),t('tue'),t('wed'),t('thu'),t('fri'),t('sat')];
   const hours = Array.from({length:24}, (_,i)=>i);
   const mat = Array.from({length:7}, ()=>Array.from({length:24}, ()=>({pnl:0,wins:0,total:0})));
-  for (const t2 of state.trades) {
+  for (const t2 of trades) {
     const d=new Date(t2.date+'T00:00:00').getDay(), h=t2.hour!==undefined?t2.hour:12;
     mat[d][h].pnl+=(t2.pnl||0); mat[d][h].total++; if(t2.result==='Win')mat[d][h].wins++;
   }
@@ -825,7 +936,7 @@ function renderJournal() {
 function renderPlaybook() {
   $('pb-empty').style.display=state.playbooks.length?'none':'';
   $('playbook-list').innerHTML=state.playbooks.map(pb=>{
-    const pbt=state.trades.filter(t2=>t2.strategy===pb.name), pbs=calcStats(pbt);
+    const pbt=getActiveTrades().filter(t2=>t2.strategy===pb.name), pbs=calcStats(pbt, getPortfolioStartBalance());
     return `<div class="playbook-item">
       <div>
         <div class="playbook-name">${pb.name}</div>
@@ -847,9 +958,10 @@ function renderPlaybook() {
 // RISK LAB
 // ═══════════════════════════════════════════════
 function renderRisk() {
-  const s=calcStats(state.trades);
+  const trades = getActiveTrades();
+  const s=calcStats(trades, getPortfolioStartBalance());
   $('risk-kpis').innerHTML=[
-    {label:t('accountBalance'), val:fmtN(state.settings.startBalance+s.netPnl), cls:'c-acc'},
+    {label:t('accountBalance'), val:fmtN(getPortfolioStartBalance()+s.netPnl), cls:'c-acc'},
     {label:t('maxDD'), val:s.maxDD.toFixed(1)+'%', cls:s.maxDD>10?'c-loss':''},
     {label:t('profitFactor'), val:s.pf===Infinity?'∞':s.pf.toFixed(2), cls:s.pf>=1?'c-win':'c-loss'},
   ].map(k=>`<div class="risk-card"><div class="risk-num ${k.cls}">${k.val}</div><div class="risk-label">${k.label}</div></div>`).join('');
@@ -866,9 +978,10 @@ function updatePosSizeCalc() {
   $('rl-maxloss').textContent=fmtN(riskAmt);
 }
 function runMonteCarlo() {
-  if(!state.trades.length){showToast(t('noSimulate'));return;}
-  const s=calcStats(state.trades), startBal=state.settings.startBalance+s.netPnl;
-  const pnls=state.trades.map(t2=>t2.pnl||0), N=1000, T2=50, finals=[];
+  const trades = getActiveTrades();
+  if(!trades.length){showToast(t('noSimulate'));return;}
+  const s=calcStats(trades, getPortfolioStartBalance()), startBal=getPortfolioStartBalance()+s.netPnl;
+  const pnls=trades.map(t2=>t2.pnl||0), N=1000, T2=50, finals=[];
   for(let i=0;i<N;i++){let bal=startBal; for(let j=0;j<T2;j++){bal+=pnls[Math.floor(Math.random()*pnls.length)];} finals.push(bal);}
   finals.sort((a,b)=>a-b);
   const p5=finals[Math.floor(N*.05)], median=finals[Math.floor(N*.5)], p95=finals[Math.floor(N*.95)];
@@ -887,30 +1000,38 @@ function runMonteCarlo() {
 // ═══════════════════════════════════════════════
 // TRADE MODAL
 // ═══════════════════════════════════════════════
+function renderTradePortfolioSelect() {
+  const sel = $('t-portfolio');
+  if (!sel) return;
+  sel.innerHTML = state.portfolios.map(p =>
+    `<option value="${p.id}" ${p.id === (currentPortfolioId !== 'all' ? currentPortfolioId : getDefaultPortfolio()?.id) ? 'selected' : ''}>${p.name}</option>`
+  ).join('');
+}
+
 function openTradeModal(tradeId) {
   editingTradeId = tradeId || null;
   $('modal-title').textContent = tradeId ? t('editTrade') : t('logNewTrade');
   initImageUpload();
+  renderTradePortfolioSelect();
   if (tradeId) {
     const tr = state.trades.find(x=>x.id===tradeId);
     if (!tr) return;
     $('t-symbol').value=tr.symbol||''; $('t-date').value=tr.date||'';
     $('t-direction').value=tr.direction||'Long'; $('t-market').value=tr.market||'Forex';
     $('t-entry').value=tr.entry||''; $('t-exit').value=tr.exit||'';
-    $('t-qty').value=tr.qty||'';
-    $('t-risk').value=tr.risk!=null?tr.risk:'';
-    $('t-rr-input').value=tr.rr!=null?tr.rr:'';
-    $('t-pnl').value=tr.pnl||'';
+    $('t-qty').value=tr.qty||''; $('t-risk').value=tr.risk!=null?tr.risk:'';
+    $('t-rr-input').value=tr.rr!=null?tr.rr:''; $('t-pnl').value=tr.pnl||'';
     $('t-strategy').value=tr.strategy||''; $('t-result').value=tr.result||'Win';
     $('t-session').value=tr.session||''; $('t-rating').value=tr.rating||'';
     $('t-tags').value=tr.tags||''; $('t-notes').value=tr.notes||'';
+    if (tr.portfolioId) $('t-portfolio').value = tr.portfolioId;
     if (tr.images && tr.images.length) { tradeImages = [...tr.images]; renderImagePreview(); }
   } else {
     ['t-symbol','t-entry','t-exit','t-qty','t-risk','t-rr-input','t-pnl','t-strategy','t-tags','t-notes'].forEach(id=>$(id).value='');
     $('t-date').value=new Date().toISOString().slice(0,10);
     $('t-direction').value='Long'; $('t-market').value='Forex';
-    $('t-result').value='Win';
-    $('t-session').value=''; $('t-rating').value='';
+    $('t-result').value='Win'; $('t-session').value=''; $('t-rating').value='';
+    if (currentPortfolioId !== 'all') $('t-portfolio').value = currentPortfolioId;
   }
   $('trade-modal').classList.remove('hidden');
 }
@@ -925,11 +1046,11 @@ async function saveTradeHandler() {
   const exit2=$('t-exit').value!==''?+$('t-exit').value:null;
   const risk=$('t-risk').value!==''?+$('t-risk').value:null;
   const rr=$('t-rr-input').value!==''?+$('t-rr-input').value:null;
+  const portfolioId = $('t-portfolio').value || getDefaultPortfolio()?.id || 'default';
   const trade={
     id:editingTradeId||uid2(), symbol, date,
     direction:$('t-direction').value, market:$('t-market').value,
-    entry, exit:exit2, pnl,
-    risk, rr,
+    entry, exit:exit2, pnl, risk, rr,
     qty:$('t-qty').value?+$('t-qty').value:null,
     strategy:$('t-strategy').value.trim(),
     result:$('t-result').value,
@@ -937,6 +1058,7 @@ async function saveTradeHandler() {
     tags:$('t-tags').value.trim(), notes:$('t-notes').value.trim(),
     hour:new Date().getHours(),
     images: tradeImages,
+    portfolioId,
   };
   if (editingTradeId) {
     const idx=state.trades.findIndex(x=>x.id===editingTradeId);
@@ -962,15 +1084,15 @@ window.deletePlaybookItem = async function(id) {
   state.playbooks=state.playbooks.filter(p=>p.id!==id);
   await deletePlaybookFS(id); renderPlaybook(); showToast(t('tradeDeleted'));
 };
-window.removeImage = function(idx) { tradeImages.splice(idx,1); renderImagePreview(); };
 
 // ═══════════════════════════════════════════════
 // CSV
 // ═══════════════════════════════════════════════
 function exportCSV() {
-  if(!state.trades.length){showToast(t('noExport'));return;}
-  const headers=['id','date','symbol','direction','market','entry','exit','qty','risk','rr','pnl','strategy','result','session','rating','tags','notes'];
-  const rows=state.trades.map(t2=>headers.map(h=>JSON.stringify(t2[h]??'')).join(','));
+  const trades = getActiveTrades();
+  if(!trades.length){showToast(t('noExport'));return;}
+  const headers=['id','date','symbol','direction','market','entry','exit','qty','risk','rr','pnl','strategy','result','session','rating','tags','notes','portfolioId'];
+  const rows=trades.map(t2=>headers.map(h=>JSON.stringify(t2[h]??'')).join(','));
   const csv=[headers.join(','),...rows].join('\n');
   const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
   a.download='tradeflow-export.csv'; a.click(); showToast(t('exported'),'var(--win)');
@@ -982,6 +1104,7 @@ function importCSV(file) {
     if(lines.length<2)return showToast('Empty CSV');
     const headers=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,''));
     let count=0;
+    const defPfId = getDefaultPortfolio()?.id || 'default';
     for(let i=1;i<lines.length;i++){
       const vals=lines[i].match(/(".*?"|[^,]+|(?<=,)(?=,)|(?<=,)$|^(?=,))/g)||lines[i].split(',');
       const obj={};
@@ -991,6 +1114,7 @@ function importCSV(file) {
       obj.exit=obj.exit?+obj.exit:null; obj.risk=obj.risk?+obj.risk:null; obj.rr=obj.rr?+obj.rr:null;
       obj.qty=obj.qty?+obj.qty:null;
       obj.direction=obj.direction||'Long'; obj.result=obj.result||'Win';
+      obj.portfolioId=obj.portfolioId||defPfId;
       if(!state.trades.find(t2=>t2.id===obj.id)){state.trades.push(obj); await saveTrade(obj); count++;}
     }
     renderTrades(); renderDashboard(); showToast(`${t('imported')} ${count} trades`,'var(--win)');
@@ -1004,6 +1128,7 @@ async function loadDemo() {
   const sessions=['Asia','London','New York'];
   const markets=['Forex','Crypto','Indices'];
   const now=new Date();
+  const targetPfId = currentPortfolioId !== 'all' ? currentPortfolioId : (getDefaultPortfolio()?.id || 'default');
   for(let i=90;i>=0;i--){
     if(Math.random()>.65)continue;
     const d=new Date(now); d.setDate(d.getDate()-i);
@@ -1011,16 +1136,15 @@ async function loadDemo() {
     const sym=symbols[Math.floor(Math.random()*symbols.length)];
     const win=Math.random()>.42;
     const pnl=win?+(Math.random()*450+30).toFixed(2):-(Math.random()*300+20).toFixed(2);
-    const risk=+(Math.random()*100+20).toFixed(2);
-    const rr=+(Math.random()*3+0.5).toFixed(1);
+    const risk=+(Math.random()*100+20).toFixed(2), rr=+(Math.random()*3+0.5).toFixed(1);
     const trade={
       id:uid2(), date, symbol:sym, direction:Math.random()>.5?'Long':'Short',
       market:markets[Math.floor(Math.random()*markets.length)], entry:+(100+Math.random()*50).toFixed(2),
       exit:+(100+Math.random()*50).toFixed(2), pnl, result:win?'Win':'Loss',
-      risk, rr,
-      strategy:strats[Math.floor(Math.random()*strats.length)],
+      risk, rr, strategy:strats[Math.floor(Math.random()*strats.length)],
       session:sessions[Math.floor(Math.random()*sessions.length)], qty:+(Math.random()*2+0.1).toFixed(2),
-      tags:'', notes:'', hour:Math.floor(Math.random()*24), images:[]
+      tags:'', notes:'', hour:Math.floor(Math.random()*24), images:[],
+      portfolioId: targetPfId,
     };
     state.trades.push(trade); await saveTrade(trade);
   }
@@ -1036,6 +1160,7 @@ onAuthStateChanged(auth, async user => {
     showApp();
     showToast(t('loading'));
     await loadFromFirestore();
+    renderPortfolioDropdown();
     renderDashboard();
     $('nav-trade-count').textContent = state.trades.length;
   } else {
@@ -1044,19 +1169,18 @@ onAuthStateChanged(auth, async user => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Lang toggle
   $('lang-btn').addEventListener('click', () => {
     lang = lang==='th'?'en':'th';
     localStorage.setItem('tf_lang', lang);
     $('lang-btn').textContent = lang==='th'?'EN':'TH';
     updateAllLabels();
     renderAuthForm();
+    renderPortfolioDropdown();
     const activeView = document.querySelector('.view.active');
     if (activeView) setView(activeView.id.replace('view-',''));
   });
   $('lang-btn').textContent = lang==='th'?'EN':'TH';
 
-  // Auth
   $('auth-submit-btn').addEventListener('click', async () => {
     const email=$('auth-email').value.trim(), password=$('auth-password').value;
     if(!email||!password){showToast(t('fillRequired'),'var(--loss)');return;}
@@ -1075,7 +1199,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   $('logout-btn').addEventListener('click', async () => { await signOut(auth); });
 
-  // Nav
   document.querySelectorAll('.nav-item[data-view]').forEach(el => {
     el.addEventListener('click', () => setView(el.dataset.view));
   });
@@ -1086,11 +1209,9 @@ document.addEventListener('DOMContentLoaded', () => {
   $('modal-save').addEventListener('click', saveTradeHandler);
   $('trade-modal').addEventListener('click', e => { if(e.target===$('trade-modal'))closeTrade(); });
 
-  // Image upload
   $('img-upload-btn').addEventListener('click', () => $('img-file-input').click());
   $('img-file-input').addEventListener('change', e => { if(e.target.files.length) handleImageUpload(e.target.files); e.target.value=''; });
 
-  // Sort
   document.querySelectorAll('.trade-table th[data-sort]').forEach(th => {
     th.addEventListener('click', () => {
       if(sortState.col===th.dataset.sort) sortState.asc=!sortState.asc;
@@ -1099,7 +1220,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Filters
   ['f-search','f-result','f-dir','f-market','f-from','f-to'].forEach(id => {
     $(id).addEventListener('change', renderTrades); $(id).addEventListener('input', renderTrades);
   });
@@ -1107,21 +1227,17 @@ document.addEventListener('DOMContentLoaded', () => {
     ['f-search','f-result','f-dir','f-market','f-from','f-to'].forEach(id=>$(id).value=''); renderTrades();
   });
 
-  // Calendar
   $('cal-prev').addEventListener('click', () => { calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCalendar(); });
   $('cal-next').addEventListener('click', () => { calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCalendar(); });
   $('cal-today').addEventListener('click', () => { calYear=new Date().getFullYear(); calMonth=new Date().getMonth(); renderCalendar(); });
   $('cal-detail-close').addEventListener('click', () => $('cal-detail').style.display='none');
 
-  // Equity toggle
   $('eq-balance-btn').addEventListener('click', () => { eqMode='balance'; $('eq-balance-btn').classList.add('active'); $('eq-pnl-btn').classList.remove('active'); renderDashboard(); });
   $('eq-pnl-btn').addEventListener('click', () => { eqMode='pnl'; $('eq-pnl-btn').classList.add('active'); $('eq-balance-btn').classList.remove('active'); renderDashboard(); });
 
-  // Heatmap toggle
   $('hm-pnl-btn').addEventListener('click', () => { hmMode='pnl'; $('hm-pnl-btn').classList.add('active'); $('hm-wr-btn').classList.remove('active'); renderHeatmap(); });
   $('hm-wr-btn').addEventListener('click', () => { hmMode='wr'; $('hm-wr-btn').classList.add('active'); $('hm-pnl-btn').classList.remove('active'); renderHeatmap(); });
 
-  // Journal
   $('new-journal-btn').addEventListener('click', () => { $('j-date').value=new Date().toISOString().slice(0,10); ['j-title','j-text','j-tags'].forEach(id=>$(id).value=''); $('j-mood').value='😊'; $('journal-modal').classList.remove('hidden'); });
   $('jm-close').addEventListener('click', () => $('journal-modal').classList.add('hidden'));
   $('jm-cancel').addEventListener('click', () => $('journal-modal').classList.add('hidden'));
@@ -1132,7 +1248,6 @@ document.addEventListener('DOMContentLoaded', () => {
     $('journal-modal').classList.add('hidden'); renderJournal(); showToast(t('entrySaved'),'var(--win)');
   });
 
-  // Playbook
   $('new-pb-btn').addEventListener('click', () => { ['pb-name','pb-desc','pb-market','pb-tf','pb-rules'].forEach(id=>$(id).value=''); $('pb-modal').classList.remove('hidden'); });
   $('pbm-close').addEventListener('click', () => $('pb-modal').classList.add('hidden'));
   $('pbm-cancel').addEventListener('click', () => $('pb-modal').classList.add('hidden'));
@@ -1143,11 +1258,9 @@ document.addEventListener('DOMContentLoaded', () => {
     $('pb-modal').classList.add('hidden'); renderPlaybook(); showToast(t('stratSaved'),'var(--win)');
   });
 
-  // Risk
   ['rl-balance','rl-risk','rl-sl','rl-pv'].forEach(id=>$(id).addEventListener('input', updatePosSizeCalc));
   $('run-mc-btn').addEventListener('click', runMonteCarlo);
 
-  // Import/Export
   $('importBtn').addEventListener('click', () => $('csv-import-input').click());
   $('csv-import-input').addEventListener('change', e => { if(e.target.files[0])importCSV(e.target.files[0]); e.target.value=''; });
   $('exportBtn').addEventListener('click', exportCSV);
@@ -1155,10 +1268,16 @@ document.addEventListener('DOMContentLoaded', () => {
   $('clearAllBtn').addEventListener('click', async () => {
     if(!confirm(t('clearConfirm')))return;
     await clearAllFS();
-    state={trades:[],journals:[],playbooks:[],settings:{startBalance:10000}};
+    state.trades=[]; state.journals=[]; state.playbooks=[];
     renderDashboard(); renderTrades(); showToast(t('cleared'));
   });
   $('mobileMenuBtn').addEventListener('click', () => $('sidebar').classList.toggle('open'));
+
+  $('pf-modal-close').addEventListener('click', closePortfolioManager);
+  $('pf-modal-overlay').addEventListener('click', e => { if(e.target===$('pf-modal-overlay'))closePortfolioManager(); });
+  $('pf-new-btn').addEventListener('click', () => openPortfolioForm(null));
+  $('pf-form-cancel').addEventListener('click', () => { $('pf-form-wrap').classList.add('hidden'); editingPortfolioId=null; });
+  $('pf-form-save').addEventListener('click', savePortfolioHandler);
 });
 </script>
 <style>
@@ -1177,7 +1296,6 @@ document.addEventListener('DOMContentLoaded', () => {
 html{scroll-behavior:smooth;}
 body{font-family:var(--ff);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh;}
 
-/* AUTH */
 .auth-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg);padding:20px;}
 .auth-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);width:100%;max-width:400px;padding:40px 32px;}
 .auth-logo{display:flex;align-items:center;gap:10px;margin-bottom:28px;justify-content:center;}
@@ -1188,17 +1306,14 @@ body{font-family:var(--ff);background:var(--bg);color:var(--text);font-size:14px
 .auth-input{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px 12px;color:var(--text);font-size:14px;font-family:var(--ff);outline:none;width:100%;}
 .auth-input:focus{border-color:var(--accent);}
 .auth-btn{width:100%;padding:11px;border-radius:6px;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--ff);transition:opacity .15s;}
-.auth-btn-primary{background:var(--accent);color:#fff;}
-.auth-btn-primary:hover{opacity:.88;}
-.auth-btn-google{background:var(--bg3);color:var(--text);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;gap:8px;}
-.auth-btn-google:hover{border-color:var(--accent);}
+.auth-btn-primary{background:var(--accent);color:#fff;}.auth-btn-primary:hover{opacity:.88;}
+.auth-btn-google{background:var(--bg3);color:var(--text);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;gap:8px;}.auth-btn-google:hover{border-color:var(--accent);}
 .auth-divider{text-align:center;color:var(--text3);font-size:12px;position:relative;}
 .auth-divider::before,.auth-divider::after{content:'';position:absolute;top:50%;width:42%;height:1px;background:var(--border);}
 .auth-divider::before{left:0;}.auth-divider::after{right:0;}
 .auth-switch{text-align:center;font-size:13px;color:var(--text2);margin-top:4px;}
 .auth-switch button{background:none;border:none;color:var(--accent);cursor:pointer;font-size:13px;font-family:var(--ff);}
 
-/* APP */
 .app-screen{display:flex;height:100vh;overflow:hidden;}
 .sidebar{width:220px;min-width:220px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;z-index:100;}
 .brand{padding:20px 16px 12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
@@ -1210,7 +1325,6 @@ body{font-family:var(--ff);background:var(--bg);color:var(--text);font-size:14px
 .nav-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;color:var(--text2);cursor:pointer;transition:all .15s;border:none;background:none;width:100%;text-align:left;font-size:13px;font-family:var(--ff);}
 .nav-item:hover{background:var(--bg3);color:var(--text);}
 .nav-item.active{background:var(--accent-bg);color:var(--accent);}
-.nav-item svg{flex-shrink:0;}
 .sidebar-footer{padding:12px 8px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:6px;}
 .user-info{display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:12px;color:var(--text2);}
 .user-avatar{width:24px;height:24px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;}
@@ -1219,24 +1333,72 @@ body{font-family:var(--ff);background:var(--bg);color:var(--text);font-size:14px
 .logout-btn{width:100%;padding:7px;background:var(--bg3);color:var(--text2);border:1px solid var(--border);border-radius:var(--radius);font-size:12px;cursor:pointer;font-family:var(--ff);transition:all .15s;}
 .logout-btn:hover{border-color:var(--loss);color:var(--loss);}
 
-/* MAIN */
 .main{flex:1;overflow-y:auto;background:var(--bg);}
 .view{display:none;padding:24px;max-width:1280px;margin:0 auto;}
 .view.active{display:block;}
 
-/* TOPBAR */
 .topbar{position:sticky;top:0;z-index:50;background:rgba(13,17,23,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:10px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
 .topbar-left{font-size:15px;font-weight:600;}
 .topbar-sub{font-size:12px;color:var(--text2);font-weight:400;}
 .topbar-actions{display:flex;align-items:center;gap:8px;}
 .btn{padding:7px 14px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:13px;cursor:pointer;font-family:var(--ff);transition:all .15s;display:inline-flex;align-items:center;gap:6px;}
 .btn:hover{border-color:var(--accent);color:var(--accent);}
-.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff;}
-.btn-primary:hover{opacity:.88;color:#fff;}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff;}.btn-primary:hover{opacity:.88;color:#fff;}
 .lang-btn{padding:5px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--ff);transition:all .15s;}
 .lang-btn:hover{border-color:var(--accent);color:var(--accent);}
 
-/* KPI */
+.pf-dropdown-wrap{position:relative;}
+.pf-dropdown{display:flex;align-items:center;gap:8px;padding:6px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;transition:all .15s;min-width:160px;user-select:none;}
+.pf-dropdown:hover{border-color:var(--accent);}
+.pf-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.pf-name{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pf-dropdown-menu{position:absolute;top:calc(100% + 6px);left:0;min-width:220px;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:6px;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,.4);}
+.pf-dropdown-menu.hidden{display:none;}
+.pf-menu-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;cursor:pointer;font-size:13px;transition:background .12s;color:var(--text2);}
+.pf-menu-item:hover{background:var(--bg3);color:var(--text);}
+.pf-menu-item.active{color:var(--text);font-weight:500;}
+.pf-menu-item svg{flex-shrink:0;color:var(--win);}
+.pf-menu-divider{height:1px;background:var(--border);margin:4px 0;}
+.pf-menu-manage{color:var(--text3);font-size:12px;}
+.pf-menu-manage:hover{color:var(--accent);}
+
+.pf-summary-chip{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg3);border:1px solid;border-radius:8px;font-size:12px;}
+.pf-chip{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;border:1px solid;}
+
+.pf-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:flex-start;justify-content:center;z-index:1000;padding:40px 20px;overflow-y:auto;}
+.pf-modal-overlay.hidden{display:none;}
+.pf-modal{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);width:100%;max-width:680px;}
+.pf-modal-head{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.pf-modal-title{font-size:16px;font-weight:600;}
+.pf-list{padding:16px 24px;display:flex;flex-direction:column;gap:10px;}
+.pf-list-item{display:flex;align-items:flex-start;justify-content:space-between;padding:14px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;gap:12px;}
+.pf-list-left{display:flex;align-items:flex-start;gap:12px;flex:1;}
+.pf-list-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;margin-top:3px;}
+.pf-list-name{font-weight:600;font-size:14px;display:flex;align-items:center;gap:8px;}
+.pf-list-meta{font-size:11px;color:var(--text3);margin-top:3px;display:flex;align-items:center;flex-wrap:wrap;gap:4px;}
+.pf-meta-sep{color:var(--border2);}
+.pf-list-desc{font-size:12px;color:var(--text2);margin-top:4px;}
+.pf-list-right{text-align:right;flex-shrink:0;}
+.pf-list-pnl{font-size:16px;font-weight:700;font-family:var(--mono);}
+.pf-list-wr{font-size:11px;color:var(--text2);margin-top:2px;}
+.pf-default-tag{font-size:10px;background:var(--accent-bg);color:var(--accent);padding:2px 7px;border-radius:4px;font-weight:600;}
+
+.pf-progress-wrap{margin-top:8px;display:flex;align-items:center;gap:8px;}
+.pf-progress-bar{flex:1;height:5px;background:var(--bg4);border-radius:3px;overflow:hidden;}
+.pf-progress-fill{height:100%;border-radius:3px;transition:width .4s;}
+.pf-progress-label{font-size:10px;color:var(--text3);white-space:nowrap;}
+.pf-progress-header{display:flex;justify-content:space-between;align-items:center;}
+
+.pf-form-wrap{padding:0 24px 24px;border-top:1px solid var(--border);margin-top:16px;padding-top:20px;}
+.pf-form-title{font-size:14px;font-weight:600;margin-bottom:16px;}
+.pf-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.color-picker-wrap{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;}
+.color-dot{width:24px;height:24px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .15s;}
+.color-dot:hover{transform:scale(1.15);}
+.color-dot.selected{border-color:#fff;transform:scale(1.15);}
+.pf-form-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;}
+.pf-modal-new{padding:0 24px 16px;}
+
 .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;}
 .kpi{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px;}
 .kpi-label{font-size:11px;color:var(--text2);font-weight:500;margin-bottom:6px;}
@@ -1244,7 +1406,6 @@ body{font-family:var(--ff);background:var(--bg);color:var(--text);font-size:14px
 .kpi-sub{font-size:11px;color:var(--text2);margin-top:3px;}
 .c-win{color:var(--win);}.c-loss{color:var(--loss);}.c-be{color:var(--be);}.c-acc{color:var(--accent);}
 
-/* CHARTS */
 .grid-2{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px;}
 .grid-2-eq{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
 .card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);padding:20px;}
@@ -1254,7 +1415,6 @@ body{font-family:var(--ff);background:var(--bg);color:var(--text);font-size:14px
 .chart-wrap{position:relative;height:220px;}
 .chart-wrap-sm{position:relative;height:160px;}
 
-/* CALENDAR */
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
 .cal-dow{text-align:center;font-size:11px;font-weight:600;color:var(--text3);padding:6px 0;}
 .cal-day{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:8px;min-height:80px;display:flex;flex-direction:column;cursor:pointer;transition:all .15s;}
@@ -1272,7 +1432,6 @@ body{font-family:var(--ff);background:var(--bg);color:var(--text);font-size:14px
 .icon-btn{width:30px;height:30px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;color:var(--text2);}
 .icon-btn:hover{border-color:var(--border2);color:var(--text);}
 
-/* TRADES TABLE */
 .trade-table{width:100%;border-collapse:collapse;font-size:13px;}
 .trade-table th{text-align:left;padding:10px 12px;color:var(--text2);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);cursor:pointer;white-space:nowrap;}
 .trade-table th:hover{color:var(--text);}
@@ -1291,13 +1450,11 @@ body{font-family:var(--ff);background:var(--bg);color:var(--text);font-size:14px
 .action-btn:hover{border-color:var(--accent);color:var(--accent);}
 .action-btn.danger:hover{border-color:var(--loss);color:var(--loss);}
 
-/* FILTERS */
 .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
 .filter-input{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text);font-size:13px;font-family:var(--ff);outline:none;}
 .filter-input:focus{border-color:var(--accent);}
 select.filter-input{cursor:pointer;}
 
-/* MODAL */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px;}
 .modal-overlay.hidden{display:none;}
 .modal{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);width:100%;max-width:660px;max-height:90vh;overflow-y:auto;}
@@ -1314,7 +1471,6 @@ select.filter-input{cursor:pointer;}
 select.form-input{cursor:pointer;}
 textarea.form-input{resize:vertical;min-height:70px;}
 
-/* IMAGE UPLOAD */
 .img-upload-area{border:2px dashed var(--border2);border-radius:var(--radius);padding:16px;text-align:center;cursor:pointer;transition:all .15s;color:var(--text2);}
 .img-upload-area:hover{border-color:var(--accent);color:var(--accent);}
 .img-preview-wrap{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
@@ -1322,7 +1478,6 @@ textarea.form-input{resize:vertical;min-height:70px;}
 .img-preview-item img{width:80px;height:80px;object-fit:cover;border-radius:6px;border:1px solid var(--border);}
 .img-del-btn{position:absolute;top:-6px;right:-6px;width:18px;height:18px;background:var(--loss);color:#fff;border:none;border-radius:50%;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center;}
 
-/* STATS */
 .stat-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;}
 .stat-row:last-child{border-bottom:none;}
 .stat-label{color:var(--text2);}
@@ -1330,7 +1485,6 @@ textarea.form-input{resize:vertical;min-height:70px;}
 .tag{display:inline-flex;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500;background:var(--bg4);color:var(--text2);cursor:pointer;border:1px solid var(--border);}
 .tag.active{background:var(--accent-bg);color:var(--accent);border-color:var(--accent);}
 
-/* RISK */
 .risk-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px;}
 .risk-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center;}
 .risk-num{font-size:28px;font-weight:700;font-family:var(--mono);}
@@ -1339,31 +1493,26 @@ textarea.form-input{resize:vertical;min-height:70px;}
 .slider-label{font-size:12px;color:var(--text2);display:flex;justify-content:space-between;}
 input[type=range]{width:100%;accent-color:var(--accent);}
 
-/* JOURNAL */
 .journal-entry{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;}
 .journal-date{font-size:11px;color:var(--text3);margin-bottom:6px;}
 .journal-text{font-size:13px;color:var(--text2);line-height:1.6;}
 .journal-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
 
-/* EMPTY */
 .empty{text-align:center;padding:60px 20px;color:var(--text2);}
 .empty-icon{font-size:40px;margin-bottom:12px;}
 .empty h3{font-size:16px;font-weight:600;color:var(--text);margin-bottom:6px;}
 
-/* STREAK */
 .streak-wrap{display:flex;gap:12px;}
 .streak-card{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center;}
 .streak-num{font-size:36px;font-weight:800;font-family:var(--mono);}
 .streak-label{font-size:11px;color:var(--text2);margin-top:4px;}
 
-/* PLAYBOOK */
 .playbook-item{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:flex-start;}
 .playbook-name{font-weight:600;margin-bottom:4px;}
 .playbook-desc{font-size:12px;color:var(--text2);}
 .playbook-stats{text-align:right;font-size:12px;}
 .playbook-pnl{font-weight:700;font-family:var(--mono);margin-bottom:2px;}
 
-/* TOAST */
 .toast{position:fixed;bottom:24px;right:24px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;font-size:13px;z-index:2000;max-width:300px;animation:fadeIn .2s;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
 
@@ -1380,20 +1529,17 @@ input[type=range]{width:100%;accent-color:var(--accent);}
   .form-row{grid-template-columns:1fr;}
   .kpi-grid{grid-template-columns:repeat(2,1fr);}
   .mobile-menu-btn{display:flex!important;}
+  .pf-form-grid{grid-template-columns:1fr;}
 }
 .mobile-menu-btn{display:none;}
 </style>
 </head>
 <body>
 
-<!-- AUTH SCREEN -->
 <div class="auth-screen" id="auth-screen">
   <div class="auth-box">
-    <div class="auth-logo">
-      <div class="auth-logo-icon">📈</div>
-      <div class="auth-logo-name">TradeFlow</div>
-    </div>
-    <div class="auth-title" id="auth-title">เข้าสู่ระบบ TradeFlow</div>
+    <div class="auth-logo"><div class="auth-logo-icon">📈</div><div class="auth-logo-name">คุณอาร์ม จดๆๆ</div></div>
+    <div class="auth-title" id="auth-title">เข้าสู่ระบบ คุณอาร์ม จดๆๆ</div>
     <div class="auth-form">
       <input class="auth-input" id="auth-email" type="email" placeholder="อีเมล"/>
       <input class="auth-input" id="auth-password" type="password" placeholder="รหัสผ่าน"/>
@@ -1403,124 +1549,65 @@ input[type=range]{width:100%;accent-color:var(--accent);}
         <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
         เข้าสู่ระบบด้วย Google
       </button>
-      <div class="auth-switch">
-        <span id="auth-switch-text">ยังไม่มีบัญชี?</span>
-        <button id="auth-switch-btn">สมัครสมาชิก</button>
-      </div>
+      <div class="auth-switch"><span id="auth-switch-text">ยังไม่มีบัญชี?</span> <button id="auth-switch-btn">สมัครสมาชิก</button></div>
     </div>
   </div>
 </div>
 
-<!-- APP SCREEN -->
 <div class="app-screen" id="app-screen" style="display:none">
-
-<!-- SIDEBAR -->
 <aside class="sidebar" id="sidebar">
   <div class="brand">
     <div class="brand-logo">📈</div>
-    <div>
-      <div class="brand-name">TradeFlow</div>
-      <div class="brand-tag" id="brand-tag-label">ฟรี • เต็มฟีเจอร์</div>
-    </div>
+    <div><div class="brand-name">คุณอาร์ม จดๆๆ</div><div class="brand-tag">ฟรี • เต็มฟีเจอร์</div></div>
   </div>
   <nav class="nav">
     <div class="nav-section">ภาพรวม</div>
-    <button class="nav-item active" data-view="dashboard">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
-      <span data-label="dashboard">แดชบอร์ด</span>
-    </button>
-    <button class="nav-item" data-view="calendar">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-      <span data-label="calendar">ปฏิทิน</span>
-    </button>
+    <button class="nav-item active" data-view="dashboard"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg><span data-label="dashboard">แดชบอร์ด</span></button>
+    <button class="nav-item" data-view="calendar"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span data-label="calendar">ปฏิทิน</span></button>
     <div class="nav-section">เทรด</div>
-    <button class="nav-item" data-view="trades">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
-      <span data-label="allTrades">เทรดทั้งหมด</span>
-      <span id="nav-trade-count" style="margin-left:auto;background:var(--bg4);border-radius:10px;padding:1px 7px;font-size:10px;">0</span>
-    </button>
+    <button class="nav-item" data-view="trades"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg><span data-label="allTrades">เทรดทั้งหมด</span><span id="nav-trade-count" style="margin-left:auto;background:var(--bg4);border-radius:10px;padding:1px 7px;font-size:10px;">0</span></button>
     <div class="nav-section">ข้อมูล</div>
-    <button class="nav-item" data-view="analytics">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 21V11M12 21V3M19 21v-6"/></svg>
-      <span data-label="analytics">วิเคราะห์</span>
-    </button>
-    <button class="nav-item" data-view="heatmap">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
-      <span data-label="heatmap">แผนที่ความร้อน</span>
-    </button>
+    <button class="nav-item" data-view="analytics"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 21V11M12 21V3M19 21v-6"/></svg><span data-label="analytics">วิเคราะห์</span></button>
+    <button class="nav-item" data-view="heatmap"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg><span data-label="heatmap">แผนที่ความร้อน</span></button>
     <div class="nav-section">กระบวนการ</div>
-    <button class="nav-item" data-view="journal">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5V4.5A2.5 2.5 0 016.5 2z"/></svg>
-      <span data-label="journal">บันทึก</span>
-    </button>
-    <button class="nav-item" data-view="playbook">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-      <span data-label="playbook">กลยุทธ์</span>
-    </button>
-    <button class="nav-item" data-view="risk">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-      <span data-label="riskLab">คำนวณความเสี่ยง</span>
-    </button>
+    <button class="nav-item" data-view="journal"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5V4.5A2.5 2.5 0 016.5 2z"/></svg><span data-label="journal">บันทึก</span></button>
+    <button class="nav-item" data-view="playbook"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg><span data-label="playbook">กลยุทธ์</span></button>
+    <button class="nav-item" data-view="risk"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span data-label="riskLab">คำนวณความเสี่ยง</span></button>
     <div class="nav-section">ข้อมูล</div>
-    <button class="nav-item" id="importBtn">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-      <span data-label="importCSV">นำเข้า CSV</span>
-    </button>
-    <button class="nav-item" id="exportBtn">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-      <span data-label="exportCSV">ส่งออก CSV</span>
-    </button>
-    <button class="nav-item" id="demoBtn">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-      <span data-label="loadDemo">โหลดข้อมูลตัวอย่าง</span>
-    </button>
-    <button class="nav-item" id="clearAllBtn" style="color:var(--loss)">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
-      <span data-label="clearAll">ล้างข้อมูลทั้งหมด</span>
-    </button>
+    <button class="nav-item" id="importBtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg><span data-label="importCSV">นำเข้า CSV</span></button>
+    <button class="nav-item" id="exportBtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg><span data-label="exportCSV">ส่งออก CSV</span></button>
+    <button class="nav-item" id="demoBtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg><span data-label="loadDemo">โหลดข้อมูลตัวอย่าง</span></button>
+    <button class="nav-item" id="clearAllBtn" style="color:var(--loss)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg><span data-label="clearAll">ล้างข้อมูลทั้งหมด</span></button>
   </nav>
   <div class="sidebar-footer">
-    <div class="user-info">
-      <div class="user-avatar">U</div>
-      <span id="user-email" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
-    </div>
-    <button class="new-trade-btn" id="newTradeBtn">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg>
-      <span data-label="newTrade">+ เพิ่มเทรด</span>
-    </button>
-    <button class="logout-btn" id="logout-btn" data-label="logout">ออกจากระบบ</button>
+    <div class="user-info"><div class="user-avatar">U</div><span id="user-email" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span></div>
+    <button class="new-trade-btn" id="newTradeBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg><span data-label="newTrade">+ เพิ่มเทรด</span></button>
+    <button class="logout-btn" id="logout-btn">ออกจากระบบ</button>
   </div>
 </aside>
 
-<!-- MAIN -->
 <div class="main">
   <div class="topbar">
     <div style="display:flex;align-items:center;gap:10px">
-      <button class="icon-btn mobile-menu-btn" id="mobileMenuBtn">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
-      </button>
-      <div>
-        <div class="topbar-left" id="topbar-title">แดชบอร์ด</div>
-        <div class="topbar-sub" id="topbar-sub">ไม่มีล็อค · ฟีเจอร์เต็ม · ฟรีตลอดชีพ</div>
-      </div>
+      <button class="icon-btn mobile-menu-btn" id="mobileMenuBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
+      <div><div class="topbar-left" id="topbar-title">แดชบอร์ด</div></div>
     </div>
     <div class="topbar-actions">
+      <div class="pf-dropdown-wrap" id="portfolio-dropdown-wrap"></div>
       <button class="lang-btn" id="lang-btn">EN</button>
-      <button class="btn btn-primary" id="topbar-new-trade" data-label="newTrade">+ เพิ่มเทรด</button>
+      <button class="btn btn-primary" id="topbar-new-trade">+ เพิ่มเทรด</button>
     </div>
   </div>
 
-  <!-- DASHBOARD -->
   <div class="view active" id="view-dashboard">
+    <div id="dash-pf-progress" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px 20px;margin-bottom:16px;"></div>
+    <div id="dash-pf-summary" class="card" style="margin-bottom:16px;display:none;"></div>
     <div class="kpi-grid" id="dash-kpi"></div>
     <div class="grid-2">
       <div class="card">
         <div class="card-head">
           <div><div class="card-title" data-label="equityCurve">กราฟยอดเงิน</div></div>
-          <div style="display:flex;gap:6px">
-            <button class="tag active" id="eq-balance-btn">Balance</button>
-            <button class="tag" id="eq-pnl-btn">P&L</button>
-          </div>
+          <div style="display:flex;gap:6px"><button class="tag active" id="eq-balance-btn">Balance</button><button class="tag" id="eq-pnl-btn">P&L</button></div>
         </div>
         <div class="chart-wrap"><canvas id="equityChart"></canvas></div>
       </div>
@@ -1539,13 +1626,9 @@ input[type=range]{width:100%;accent-color:var(--accent);}
         <div class="chart-wrap-sm"><canvas id="stratChart"></canvas></div>
       </div>
     </div>
-    <div class="card">
-      <div class="card-head"><div class="card-title" data-label="recentTrades">เทรดล่าสุด</div></div>
-      <div id="recent-trades-body"></div>
-    </div>
+    <div class="card"><div class="card-head"><div class="card-title" data-label="recentTrades">เทรดล่าสุด</div></div><div id="recent-trades-body"></div></div>
   </div>
 
-  <!-- CALENDAR -->
   <div class="view" id="view-calendar">
     <div class="card" style="margin-bottom:16px">
       <div class="card-head">
@@ -1561,33 +1644,19 @@ input[type=range]{width:100%;accent-color:var(--accent);}
       <div class="cal-grid" id="cal-grid"></div>
     </div>
     <div class="card" id="cal-detail" style="display:none">
-      <div class="card-head">
-        <div class="card-title" id="cal-detail-title">รายละเอียดวัน</div>
-        <button class="icon-btn" id="cal-detail-close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
-      </div>
+      <div class="card-head"><div class="card-title" id="cal-detail-title">รายละเอียดวัน</div><button class="icon-btn" id="cal-detail-close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
       <div id="cal-detail-body"></div>
     </div>
   </div>
 
-  <!-- TRADES -->
   <div class="view" id="view-trades">
     <div class="filters">
-      <input class="filter-input" id="f-search" placeholder="ค้นหาสัญลักษณ์ หมายเหตุ แท็ก…" style="width:200px"/>
-      <select class="filter-input" id="f-result">
-        <option value="">ผลลัพธ์ทั้งหมด</option>
-        <option value="Win">ชนะ</option><option value="Loss">แพ้</option><option value="Breakeven">เสมอ</option>
-      </select>
-      <select class="filter-input" id="f-dir">
-        <option value="">ทิศทางทั้งหมด</option>
-        <option value="Long">Long</option><option value="Short">Short</option>
-      </select>
-      <select class="filter-input" id="f-market">
-        <option value="">ตลาดทั้งหมด</option>
-        <option>Forex</option><option>Crypto</option><option>Stocks</option><option>Futures</option><option>Indices</option>
-      </select>
-      <input class="filter-input" id="f-from" type="date"/>
-      <input class="filter-input" id="f-to" type="date"/>
-      <button class="btn" id="f-reset" data-label="reset">รีเซ็ต</button>
+      <input class="filter-input" id="f-search" placeholder="ค้นหา..." style="width:180px"/>
+      <select class="filter-input" id="f-result"><option value="">ผลลัพธ์ทั้งหมด</option><option value="Win">ชนะ</option><option value="Loss">แพ้</option><option value="Breakeven">เสมอ</option></select>
+      <select class="filter-input" id="f-dir"><option value="">ทิศทางทั้งหมด</option><option value="Long">Long</option><option value="Short">Short</option></select>
+      <select class="filter-input" id="f-market"><option value="">ตลาดทั้งหมด</option><option>Forex</option><option>Crypto</option><option>Stocks</option><option>Futures</option><option>Indices</option></select>
+      <input class="filter-input" id="f-from" type="date"/><input class="filter-input" id="f-to" type="date"/>
+      <button class="btn" id="f-reset">รีเซ็ต</button>
       <div style="margin-left:auto;font-size:12px;color:var(--text2);align-self:center" id="trades-count-label">0 เทรด</div>
     </div>
     <div class="card" style="padding:0;overflow:auto">
@@ -1596,18 +1665,15 @@ input[type=range]{width:100%;accent-color:var(--accent);}
           <th data-sort="date">วันที่ ↕</th><th data-sort="symbol">สัญลักษณ์ ↕</th>
           <th>ตลาด</th><th>ทิศทาง</th><th data-sort="entry">ราคาเข้า ↕</th>
           <th>ราคาออก</th><th>Lot</th><th data-sort="rr">RR ↕</th>
-          <th data-sort="pnl">P&L ↕</th><th>ความเสี่ยง</th><th>ผล</th><th>กลยุทธ์</th><th></th>
+          <th data-sort="pnl">P&L ↕</th><th>ความเสี่ยง</th><th>ผล</th><th>กลยุทธ์</th>
+          <th id="th-portfolio">พอร์ต</th><th></th>
         </tr></thead>
         <tbody id="trades-body"></tbody>
       </table>
-      <div class="empty" id="trades-empty" style="display:none">
-        <div class="empty-icon">📭</div><h3 data-label="noMatchTrade">ไม่พบเทรด</h3>
-        <p data-label="noMatchDesc">บันทึกเทรดแรกหรือรีเซ็ตตัวกรอง</p>
-      </div>
+      <div class="empty" id="trades-empty" style="display:none"><div class="empty-icon">📭</div><h3>ไม่พบเทรด</h3><p>บันทึกเทรดแรกหรือรีเซ็ตตัวกรอง</p></div>
     </div>
   </div>
 
-  <!-- ANALYTICS -->
   <div class="view" id="view-analytics">
     <div class="kpi-grid" id="analytics-kpi"></div>
     <div class="grid-2-eq">
@@ -1621,39 +1687,28 @@ input[type=range]{width:100%;accent-color:var(--accent);}
     <div class="card"><div class="card-head"><div class="card-title" data-label="advStats">สถิติขั้นสูง</div></div><div id="adv-stats" style="display:grid;grid-template-columns:1fr 1fr;gap:0 32px"></div></div>
   </div>
 
-  <!-- HEATMAP -->
   <div class="view" id="view-heatmap">
     <div class="card">
       <div class="card-head">
         <div><div class="card-title" data-label="heatmapTitle">แผนที่ความร้อน P&L</div><div class="card-sub" data-label="heatmapSub">ค้นหาช่วงเวลาที่ดีที่สุด</div></div>
-        <div style="display:flex;gap:6px">
-          <button class="tag active" id="hm-pnl-btn">P&L</button>
-          <button class="tag" id="hm-wr-btn">Win Rate</button>
-        </div>
+        <div style="display:flex;gap:6px"><button class="tag active" id="hm-pnl-btn">P&L</button><button class="tag" id="hm-wr-btn">Win Rate</button></div>
       </div>
       <div id="heatmap-wrap" style="overflow-x:auto"></div>
     </div>
   </div>
 
-  <!-- JOURNAL -->
   <div class="view" id="view-journal">
-    <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
-      <button class="btn btn-primary" id="new-journal-btn" data-label="newEntry">+ บันทึกใหม่</button>
-    </div>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:16px"><button class="btn btn-primary" id="new-journal-btn">+ บันทึกใหม่</button></div>
     <div id="journal-list"></div>
-    <div class="empty" id="journal-empty"><div class="empty-icon">📓</div><h3 data-label="noJournal">ยังไม่มีบันทึก</h3><p data-label="noJournalDesc">เขียนความคิด บทเรียน และหมายเหตุ</p></div>
+    <div class="empty" id="journal-empty"><div class="empty-icon">📓</div><h3>ยังไม่มีบันทึก</h3><p>เขียนความคิด บทเรียน และหมายเหตุ</p></div>
   </div>
 
-  <!-- PLAYBOOK -->
   <div class="view" id="view-playbook">
-    <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
-      <button class="btn btn-primary" id="new-pb-btn" data-label="addStrategy">+ เพิ่มกลยุทธ์</button>
-    </div>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:16px"><button class="btn btn-primary" id="new-pb-btn">+ เพิ่มกลยุทธ์</button></div>
     <div id="playbook-list"></div>
-    <div class="empty" id="pb-empty"><div class="empty-icon">📋</div><h3 data-label="noPlaybook">ยังไม่มีกลยุทธ์</h3><p data-label="noPlaybookDesc">บันทึกกลยุทธ์และกฎการเทรด</p></div>
+    <div class="empty" id="pb-empty"><div class="empty-icon">📋</div><h3>ยังไม่มีกลยุทธ์</h3><p>บันทึกกลยุทธ์และกฎการเทรด</p></div>
   </div>
 
-  <!-- RISK LAB -->
   <div class="view" id="view-risk">
     <div class="risk-grid" id="risk-kpis"></div>
     <div class="grid-2-eq">
@@ -1686,134 +1741,129 @@ input[type=range]{width:100%;accent-color:var(--accent);}
     </div>
   </div>
 
-</div><!-- end .main -->
-</div><!-- end .app-screen -->
+</div>
+</div>
 
-<!-- TRADE MODAL -->
 <div class="modal-overlay hidden" id="trade-modal">
   <div class="modal">
-    <div class="modal-head">
-      <div class="modal-title" id="modal-title">บันทึกเทรดใหม่</div>
-      <button class="icon-btn" id="modal-close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
-    </div>
+    <div class="modal-head"><div class="modal-title" id="modal-title">บันทึกเทรดใหม่</div><button class="icon-btn" id="modal-close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
     <div class="modal-body">
-      <!-- Row 1: Symbol + Date -->
-      <div class="form-row">
-        <div class="form-group"><label class="form-label" data-label="symbol">สัญลักษณ์ *</label><input class="form-input" id="t-symbol" placeholder="EURUSD, BTCUSDT…"/></div>
-        <div class="form-group"><label class="form-label" data-label="date">วันที่ *</label><input class="form-input" id="t-date" type="date"/></div>
-      </div>
-      <!-- Row 2: Direction + Market -->
-      <div class="form-row">
-        <div class="form-group"><label class="form-label" data-label="direction">ทิศทาง</label>
-          <select class="form-input" id="t-direction"><option value="Long">Long (ซื้อ)</option><option value="Short">Short (ขาย)</option></select>
-        </div>
-        <div class="form-group"><label class="form-label" data-label="market">ตลาด</label>
-          <select class="form-input" id="t-market"><option>Forex</option><option>Crypto</option><option>Stocks</option><option>Futures</option><option>Indices</option></select>
-        </div>
-      </div>
-      <!-- Row 3: Entry + Exit -->
-      <div class="form-row">
-        <div class="form-group"><label class="form-label" data-label="entryPrice">ราคาเข้า</label><input class="form-input" id="t-entry" type="number" step="any" placeholder="0.00"/></div>
-        <div class="form-group"><label class="form-label" data-label="exitPrice">ราคาออก</label><input class="form-input" id="t-exit" type="number" step="any" placeholder="0.00"/></div>
-      </div>
-      <!-- Row 4: Qty + Risk -->
-      <div class="form-row">
-        <div class="form-group"><label class="form-label" data-label="qty">จำนวน / Lot</label><input class="form-input" id="t-qty" type="number" step="any" placeholder="1"/></div>
-        <div class="form-group">
-          <label class="form-label" data-label="risk">ความเสี่ยง ($)</label>
-          <input class="form-input" id="t-risk" type="number" step="any" placeholder="จำนวนเงินที่ยอมขาดทุน"/>
-        </div>
-      </div>
-      <!-- Row 5: RR + P&L -->
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label" data-label="rrInput">RR (เช่น 2 = 1:2)</label>
-          <input class="form-input" id="t-rr-input" type="number" step="any" placeholder="2"/>
-        </div>
-        <div class="form-group"><label class="form-label" data-label="pnl">กำไร/ขาดทุน ($)</label><input class="form-input" id="t-pnl" type="number" step="any" placeholder="0.00"/></div>
-      </div>
-      <!-- Row 6: Strategy + Result -->
-      <div class="form-row">
-        <div class="form-group"><label class="form-label" data-label="strategy">กลยุทธ์</label><input class="form-input" id="t-strategy" placeholder="Breakout, ICT…"/></div>
-        <div class="form-group"><label class="form-label" data-label="result">ผลลัพธ์</label>
-          <select class="form-input" id="t-result"><option value="Win">ชนะ</option><option value="Loss">แพ้</option><option value="Breakeven">เสมอ</option></select>
-        </div>
-      </div>
-      <!-- Row 7: Session + Rating -->
-      <div class="form-row">
-        <div class="form-group"><label class="form-label" data-label="session">เซสชั่น</label>
-          <select class="form-input" id="t-session"><option value="">—</option><option value="Asia">เอเชีย</option><option value="London">ลอนดอน</option><option value="New York">นิวยอร์ก</option></select>
-        </div>
-        <div class="form-group"><label class="form-label" data-label="rating">คะแนน (1-5)</label>
-          <select class="form-input" id="t-rating"><option value="">—</option><option>5 ⭐⭐⭐⭐⭐</option><option>4 ⭐⭐⭐⭐</option><option>3 ⭐⭐⭐</option><option>2 ⭐⭐</option><option>1 ⭐</option></select>
-        </div>
-      </div>
-      <div class="form-group"><label class="form-label" data-label="tags">แท็ก (คั่นด้วยจุลภาค)</label><input class="form-input" id="t-tags" placeholder="fomo, news, reversal…"/></div>
-      <div class="form-group"><label class="form-label" data-label="notes">หมายเหตุ</label><textarea class="form-input" id="t-notes" placeholder="คุณเห็นอะไร? คุณรู้สึกอย่างไร?"></textarea></div>
-      <!-- IMAGE UPLOAD -->
       <div class="form-group">
-        <label class="form-label" data-label="images">รูปภาพ (สูงสุด 4 รูป)</label>
-        <div class="img-upload-area" id="img-upload-btn">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-bottom:6px"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-          <div style="font-size:12px" data-label="clickToUpload">คลิกเพื่ออัปโหลด</div>
-          <div style="font-size:11px;color:var(--text3)">PNG, JPG, WEBP (max 4 รูป)</div>
-        </div>
+        <label class="form-label" data-label="portfolio">พอร์ต</label>
+        <select class="form-input" id="t-portfolio"></select>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">สัญลักษณ์ *</label><input class="form-input" id="t-symbol" placeholder="EURUSD, BTCUSDT…"/></div>
+        <div class="form-group"><label class="form-label">วันที่ *</label><input class="form-input" id="t-date" type="date"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">ทิศทาง</label><select class="form-input" id="t-direction"><option value="Long">Long (ซื้อ)</option><option value="Short">Short (ขาย)</option></select></div>
+        <div class="form-group"><label class="form-label">ตลาด</label><select class="form-input" id="t-market"><option>Forex</option><option>Crypto</option><option>Stocks</option><option>Futures</option><option>Indices</option></select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">ราคาเข้า</label><input class="form-input" id="t-entry" type="number" step="any" placeholder="0.00"/></div>
+        <div class="form-group"><label class="form-label">ราคาออก</label><input class="form-input" id="t-exit" type="number" step="any" placeholder="0.00"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">จำนวน / Lot</label><input class="form-input" id="t-qty" type="number" step="any" placeholder="1"/></div>
+        <div class="form-group"><label class="form-label">ความเสี่ยง ($)</label><input class="form-input" id="t-risk" type="number" step="any" placeholder="จำนวนเงินที่ยอมขาดทุน"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">RR (เช่น 2 = 1:2)</label><input class="form-input" id="t-rr-input" type="number" step="any" placeholder="2"/></div>
+        <div class="form-group"><label class="form-label">กำไร/ขาดทุน ($)</label><input class="form-input" id="t-pnl" type="number" step="any" placeholder="0.00"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">กลยุทธ์</label><input class="form-input" id="t-strategy" placeholder="Breakout, ICT…"/></div>
+        <div class="form-group"><label class="form-label">ผลลัพธ์</label><select class="form-input" id="t-result"><option value="Win">ชนะ</option><option value="Loss">แพ้</option><option value="Breakeven">เสมอ</option></select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">เซสชั่น</label><select class="form-input" id="t-session"><option value="">—</option><option value="Asia">เอเชีย</option><option value="London">ลอนดอน</option><option value="New York">นิวยอร์ก</option></select></div>
+        <div class="form-group"><label class="form-label">คะแนน (1-5)</label><select class="form-input" id="t-rating"><option value="">—</option><option>5 ⭐⭐⭐⭐⭐</option><option>4 ⭐⭐⭐⭐</option><option>3 ⭐⭐⭐</option><option>2 ⭐⭐</option><option>1 ⭐</option></select></div>
+      </div>
+      <div class="form-group"><label class="form-label">แท็ก</label><input class="form-input" id="t-tags" placeholder="fomo, news, reversal…"/></div>
+      <div class="form-group"><label class="form-label">หมายเหตุ</label><textarea class="form-input" id="t-notes" placeholder="คุณเห็นอะไร? คุณรู้สึกอย่างไร?"></textarea></div>
+      <div class="form-group">
+        <label class="form-label">รูปภาพ (สูงสุด 4 รูป)</label>
+        <div class="img-upload-area" id="img-upload-btn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-bottom:6px"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg><div style="font-size:12px">คลิกเพื่ออัปโหลด</div></div>
         <div class="img-preview-wrap" id="image-preview-wrap"></div>
         <input type="file" id="img-file-input" accept="image/*" multiple style="display:none"/>
       </div>
     </div>
-    <div class="modal-foot">
-      <button class="btn" id="modal-cancel" data-label="cancel">ยกเลิก</button>
-      <button class="btn btn-primary" id="modal-save" data-label="save">บันทึก</button>
+    <div class="modal-foot"><button class="btn" id="modal-cancel">ยกเลิก</button><button class="btn btn-primary" id="modal-save">บันทึก</button></div>
+  </div>
+</div>
+
+<div class="pf-modal-overlay hidden" id="pf-modal-overlay">
+  <div class="pf-modal" id="pf-modal">
+    <div class="pf-modal-head">
+      <div class="pf-modal-title">📂 จัดการพอร์ต</div>
+      <button class="icon-btn" id="pf-modal-close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="pf-modal-new">
+      <button class="btn btn-primary" id="pf-new-btn" style="margin-top:16px">+ สร้างพอร์ตใหม่</button>
+    </div>
+    <div class="pf-list" id="pf-list"></div>
+
+    <div class="pf-form-wrap hidden" id="pf-form-wrap">
+      <div class="pf-form-title" id="pf-form-title">สร้างพอร์ตใหม่</div>
+      <div class="pf-form-grid">
+        <div class="form-group"><label class="form-label">ชื่อพอร์ต *</label><input class="form-input" id="pf-fname" placeholder="เช่น Live Account, Paper Trade…"/></div>
+        <div class="form-group"><label class="form-label">Broker</label><input class="form-input" id="pf-fbroker" placeholder="เช่น IC Markets, Exness…"/></div>
+        <div class="form-group"><label class="form-label">เงินเริ่มต้น ($)</label><input class="form-input" id="pf-fbalance" type="number" step="any" placeholder="10000"/></div>
+        <div class="form-group">
+          <label class="form-label">เป้าหมาย Balance ($) <span style="color:var(--text3)">(ไม่บังคับ)</span></label>
+          <input class="form-input" id="pf-ftarget" type="number" step="any" placeholder="เช่น 50000"/>
+        </div>
+        <div class="form-group"><label class="form-label">สกุลเงิน</label>
+          <select class="form-input" id="pf-fcurrency">
+            <option value="USD">USD</option><option value="THB">THB</option>
+            <option value="EUR">EUR</option><option value="GBP">GBP</option>
+            <option value="JPY">JPY</option><option value="BTC">BTC</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">คำอธิบาย</label><input class="form-input" id="pf-fdesc" placeholder="เช่น พอร์ตเทรด Forex สด…"/></div>
+      </div>
+      <div class="form-group" style="margin-top:12px">
+        <label class="form-label">สีพอร์ต</label>
+        <div class="color-picker-wrap" id="pf-color-picker"></div>
+      </div>
+      <div class="pf-form-actions">
+        <button class="btn" id="pf-form-cancel">ยกเลิก</button>
+        <button class="btn btn-primary" id="pf-form-save">บันทึกพอร์ต</button>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- JOURNAL MODAL -->
 <div class="modal-overlay hidden" id="journal-modal">
   <div class="modal">
-    <div class="modal-head">
-      <div class="modal-title" data-label="journal">บันทึก</div>
-      <button class="icon-btn" id="jm-close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
-    </div>
+    <div class="modal-head"><div class="modal-title">บันทึก</div><button class="icon-btn" id="jm-close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
     <div class="modal-body">
       <div class="form-row">
-        <div class="form-group"><label class="form-label" data-label="date">วันที่</label><input class="form-input" id="j-date" type="date"/></div>
-        <div class="form-group"><label class="form-label" data-label="mood">อารมณ์</label>
-          <select class="form-input" id="j-mood"><option value="😊">😊 มีความสุข</option><option value="😐">😐 ปกติ</option><option value="😤">😤 หงุดหงิด</option><option value="😰">😰 กังวล</option><option value="😎">😎 มั่นใจ</option><option value="😔">😔 ผิดหวัง</option></select>
-        </div>
+        <div class="form-group"><label class="form-label">วันที่</label><input class="form-input" id="j-date" type="date"/></div>
+        <div class="form-group"><label class="form-label">อารมณ์</label><select class="form-input" id="j-mood"><option value="😊">😊 มีความสุข</option><option value="😐">😐 ปกติ</option><option value="😤">😤 หงุดหงิด</option><option value="😰">😰 กังวล</option><option value="😎">😎 มั่นใจ</option><option value="😔">😔 ผิดหวัง</option></select></div>
       </div>
-      <div class="form-group"><label class="form-label" data-label="title">หัวข้อ</label><input class="form-input" id="j-title" placeholder="สรุปวันนี้…"/></div>
-      <div class="form-group"><label class="form-label" data-label="entry">เนื้อหา</label><textarea class="form-input" id="j-text" style="min-height:120px" placeholder="เขียนความคิด บทเรียน ความผิดพลาด ความสำเร็จ…"></textarea></div>
-      <div class="form-group"><label class="form-label" data-label="tags">แท็ก</label><input class="form-input" id="j-tags" placeholder="วินัย, อดทน, fomo…"/></div>
+      <div class="form-group"><label class="form-label">หัวข้อ</label><input class="form-input" id="j-title" placeholder="สรุปวันนี้…"/></div>
+      <div class="form-group"><label class="form-label">เนื้อหา</label><textarea class="form-input" id="j-text" style="min-height:120px" placeholder="เขียนความคิด บทเรียน..."></textarea></div>
+      <div class="form-group"><label class="form-label">แท็ก</label><input class="form-input" id="j-tags" placeholder="วินัย, อดทน, fomo…"/></div>
     </div>
-    <div class="modal-foot">
-      <button class="btn" id="jm-cancel" data-label="cancel">ยกเลิก</button>
-      <button class="btn btn-primary" id="jm-save" data-label="save">บันทึก</button>
-    </div>
+    <div class="modal-foot"><button class="btn" id="jm-cancel">ยกเลิก</button><button class="btn btn-primary" id="jm-save">บันทึก</button></div>
   </div>
 </div>
 
-<!-- PLAYBOOK MODAL -->
 <div class="modal-overlay hidden" id="pb-modal">
   <div class="modal">
-    <div class="modal-head">
-      <div class="modal-title" data-label="playbook">กลยุทธ์</div>
-      <button class="icon-btn" id="pbm-close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
-    </div>
+    <div class="modal-head"><div class="modal-title">กลยุทธ์</div><button class="icon-btn" id="pbm-close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
     <div class="modal-body">
-      <div class="form-group"><label class="form-label" data-label="stratName">ชื่อกลยุทธ์ *</label><input class="form-input" id="pb-name" placeholder="ICT SMC, Breakout, EMA Cross…"/></div>
-      <div class="form-group"><label class="form-label" data-label="desc">คำอธิบาย</label><textarea class="form-input" id="pb-desc" placeholder="อธิบาย setup, เงื่อนไข, กฎต่างๆ…"></textarea></div>
+      <div class="form-group"><label class="form-label">ชื่อกลยุทธ์ *</label><input class="form-input" id="pb-name" placeholder="ICT SMC, Breakout, EMA Cross…"/></div>
+      <div class="form-group"><label class="form-label">คำอธิบาย</label><textarea class="form-input" id="pb-desc" placeholder="อธิบาย setup..."></textarea></div>
       <div class="form-row">
-        <div class="form-group"><label class="form-label" data-label="markets">ตลาด</label><input class="form-input" id="pb-market" placeholder="Forex, Crypto…"/></div>
-        <div class="form-group"><label class="form-label" data-label="timeframes">กรอบเวลา</label><input class="form-input" id="pb-tf" placeholder="H1, H4, Daily…"/></div>
+        <div class="form-group"><label class="form-label">ตลาด</label><input class="form-input" id="pb-market" placeholder="Forex, Crypto…"/></div>
+        <div class="form-group"><label class="form-label">กรอบเวลา</label><input class="form-input" id="pb-tf" placeholder="H1, H4, Daily…"/></div>
       </div>
-      <div class="form-group"><label class="form-label" data-label="rules">กฎ (บรรทัดละ 1 ข้อ)</label><textarea class="form-input" id="pb-rules" placeholder="1. รอ BOS&#10;2. เข้าตอน pullback&#10;3. Risk max 1%"></textarea></div>
+      <div class="form-group"><label class="form-label">กฎ (บรรทัดละ 1 ข้อ)</label><textarea class="form-input" id="pb-rules" placeholder="1. รอ BOS&#10;2. เข้าตอน pullback&#10;3. Risk max 1%"></textarea></div>
     </div>
-    <div class="modal-foot">
-      <button class="btn" id="pbm-cancel" data-label="cancel">ยกเลิก</button>
-      <button class="btn btn-primary" id="pbm-save" data-label="save">บันทึก</button>
-    </div>
+    <div class="modal-foot"><button class="btn" id="pbm-cancel">ยกเลิก</button><button class="btn btn-primary" id="pbm-save">บันทึก</button></div>
   </div>
 </div>
 
